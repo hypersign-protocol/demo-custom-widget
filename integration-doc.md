@@ -217,6 +217,9 @@ async function initKycUI() {
 ### Step 2: Document OCR Extraction
 After capturing the ID document via the camera, send the Base64 image for extraction.
 
+### Option A: Passport Extraction
+For passports, only the front image (the information page) is required in the request payload.
+
 ```js
 async function processDocumentExtraction(base64Image) {
     const response = await fetch(`${KYC_BASE_URL}/api/v2/documents/extract`, {
@@ -230,6 +233,33 @@ async function processDocumentExtraction(base64Image) {
             documentFront: base64Image,
             sessionId: state.session.id,
             documentType: "PASSPORT" 
+        })
+    });
+
+    const result = await response.json();
+    state.session.extractionToken = result.data.extractionToken;
+}
+```
+
+### Option B: Government ID Extraction
+
+For Government IDs, the API expects both front and back images, along with a specific ISO country code.
+
+```js
+async function processDocumentExtraction(base64Image) {
+    const response = await fetch(`${KYC_BASE_URL}/api/v2/documents/extract`, {
+        method: 'POST',
+        headers: {
+            'x-kyc-access-token': state.tokens.kycAdmin,
+            'Authorization': `Bearer ${state.tokens.userBearer}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            documentFront: base64ImageFront,
+            documentBack: base64ImageBack,
+            sessionId: state.session.id,
+            documentType: "GOVT_ID",
+            countryCode: "IND" // ISO Alpha-3 code (e.g., IND for India)
         })
     });
 
