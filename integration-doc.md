@@ -81,14 +81,27 @@ async function initializeVerificationSession
 Every user requires a DID to sign their final verification results.
 
 ```js
-async function registerUserDid(ssiAdminToken) {
+const users = {}
+async function registerUserDid(ssiAdminToken, email) {
+    
+    const user = users[email]
+
+    // check if user already exists
+    if(user) {
+        return  {
+            did: user.did,
+            verificationMethodId: user.did + "#key1"
+        }
+    }
+
+    // if not proceed to create a new DID
     const res = await fetch(`${SSI_BASE_URL}/api/v1/did/create`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${ssiAdminToken}`
         },
-        body: JSON.stringify({ namespace: '' })
+        body: JSON.stringify({ namespace: ''})
     });
     const result = await res.json();
     
@@ -96,6 +109,7 @@ async function registerUserDid(ssiAdminToken) {
     const method = result.metadata.didDocument.verificationMethods
                    .find(m => m.type === 'Ed25519VerificationKey2020');
 
+    users[email] = { did: result.did }
     return {
         did: result.did,
         verificationMethodId: method.id
@@ -152,15 +166,17 @@ app.get('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         // 2. Initialize the KYC Verification Session
         const sessionId = await initializeVerificationSession(kycAdminToken);
 
-        // 3. Register a new User DID
-        const userDidMetadata = await registerUserDid(ssiAdminToken);
-
-        // 4. Prepare User Claims for the DID JWT
-        const userData = {
+        let userData = {
             name: "John",
             email: "john@gmail.com", // Mandatory
-            userDid: userDidMetadata.did, // Mandatory
+            userDid: "", 
         };
+
+        // 3. Register a new User DID
+        const userDidMetadata = await registerUserDid(ssiAdminToken, userData.email);
+
+        // 4. Prepare User Claims for the DID JWT
+        userData.userDid = userDidMetadata.did
 
         // 5. Generate the final User-specific Bearer Token
         const userBearerToken = await generateKycUserSessionToken(
