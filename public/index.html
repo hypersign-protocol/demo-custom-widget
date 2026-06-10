@@ -43,6 +43,13 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
+        .choice-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
         #status-msg {
             margin-top: 10px;
             font-weight: bold;
@@ -72,6 +79,16 @@
             </div>
 
             <button onclick="validateAndStart()">Start ID Verification</button>
+        </div>
+
+        <div id="step-document-type" class="step-card hidden">
+            <h3>Select Document Type</h3>
+            <p>What document do you want to scan?</p>
+
+            <div class="choice-row">
+                <button onclick="selectDocumentType('GOVT_ID')">Government ID</button>
+                <button onclick="selectDocumentType('PASSPORT')">Passport</button>
+            </div>
         </div>
 
         <div id="camera-container" class="step-card hidden">
@@ -116,11 +133,15 @@
                 id: "",
                 extractionToken: ""
             },
-            currentStep: "init",
-            statusMsg: ""
+            documentType: "",
+            documentFront: "",
+            documentBack: ""
         };
 
-        const captureBtn = document.getElementById('capture-btn');
+        let currentStep = "init";
+        const captureBtn = document.getElementById("capture-btn");
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
 
         function validateAndStart() {
             const name = document.getElementById('user-name').value.trim();
@@ -149,8 +170,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        name: name,
-                        email: email
+                        name,
+                        email
                     })
                 });
 
@@ -171,29 +192,50 @@
                 state.user.did = data.userDid;
                 state.user.methodId = data.userVerificationMethodId;
 
-                // Transition to UI
-                showCameraUI('Capture ID Card (Front)', 'doc-extract');
-
+                showDocumentTypeStep();
             } catch (error) {
                 handleError("Initialization Error", error);
             }
         }
 
-        /**
-         * Step 2: Document OCR Extraction
-         * Sends the base64 image of the document to the KYC service.
-         */
-        async function processDocumentExtraction(base64Image) {
+        function showDocumentTypeStep() {
+            currentStep = "document-type";
+            document.querySelectorAll(".step-card").forEach(el => el.classList.add("hidden"));
+            document.getElementById("step-document-type").classList.remove("hidden");
+        }
+
+        function selectDocumentType(documentType) {
+            state.documentType = documentType;
+            state.documentFront = "";
+            state.documentBack = "";
+
+            if (documentType === "PASSPORT") {
+                showCameraUI("Capture Passport (Front)", "doc-extract");
+                return;
+            }
+
+            showCameraUI("Capture ID Card (Front)", "doc-extract");
+        }
+
+        async function processDocumentExtraction(frontImage, backImage) {
             updateStatus("Extracting data from document...");
+
             try {
+                const extractionBody = {
+                    documentFront: frontImage,
+                    sessionId: state.session.id,
+                    documentType: state.documentType
+                };
+
+                if (state.documentType === "GOVT_ID") {
+                    extractionBody.documentBack = backImage;
+                    extractionBody.countryCode = "IND";
+                }
+
                 const response = await fetch(`${KYC_BASE_URL}/api/v2/documents/extract`, {
-                    method: 'POST',
+                    method: "POST",
                     headers: createHeaders(true),
-                    body: JSON.stringify({
-                        documentFront: base64Image,
-                        sessionId: state.session.id,
-                        documentType: "PASSPORT"
-                    })
+                    body: JSON.stringify(extractionBody)
                 });
 
                 const result = await response.json();
@@ -291,7 +333,7 @@
             const headers = {
                 'Content-Type': 'application/json',
                 'x-kyc-access-token': state.tokens.kycAdmin,
-                'X-Ssi-Access-Token': state.tokens.ssiAdmin
+                'x-ssi-access-token': state.tokens.ssiAdmin
             };
             if (includeUserToken) {
                 headers['Authorization'] = `Bearer ${state.tokens.userBearer}`;
@@ -313,6 +355,7 @@
 
         function displayFinalStep(url) {
             document.getElementById('camera-container').classList.add('hidden');
+            document.getElementById('step-document-type').classList.add("hidden");
             document.getElementById('step-final').classList.remove('hidden');
             document.getElementById('result-text').innerText = `Verification Successful. Redirecting to: ${url || 'Dashboard'}`;
         }
@@ -320,14 +363,21 @@
         // --- CAMERA UTILITY ---
         async function showCameraUI(title, step) {
             currentStep = step;
-            state.statusMsg.innerText = "";
+            updateStatus('');
             document.querySelectorAll('.step-card').forEach(el => el.classList.add('hidden'));
             document.getElementById('camera-container').classList.remove('hidden');
             document.getElementById('camera-title').innerText = title;
 
-            // Use rear camera for docs, front camera for selfie
             const constraints = {
-                video: { facingMode: step === "doc-extract" ? "environment" : "user" }
+                video: {
+                    facingMode: step === "liveness" ? "user" : "environment",
+                    width: {
+                        ideal: 1920
+                    },
+                    height: {
+                        ideal: 1080
+                    }
+                }
             };
 
             try {
@@ -344,18 +394,33 @@
             }
         }
 
-        // --- CAPTURE CLICK HANDLER ---
         captureBtn.onclick = async () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            const base64Image = canvas.toDataURL('image/jpeg');
+            const ctx = canvas.getContext("2d");
+            const targetWidth = 1400;
+            const scale = targetWidth / video.videoWidth;
 
-            stopCamera(); // Stop camera while processing
-            state.statusMsg.innerText = "Processing... please wait.";
+            canvas.width = targetWidth;
+            canvas.height = video.videoHeight * scale;
+            ctx.filter = "contrast(110%) brightness(105%)";
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const base64Image = canvas.toDataURL("image/jpeg", 1.0);
+
+            stopCamera();
+            updateStatus("Processing... please wait.");
 
             if (currentStep === "doc-extract") {
-                await processDocumentExtraction(base64Image);
+                state.documentFront = base64Image;
+
+                if (state.documentType === "PASSPORT") {
+                    await processDocumentExtraction(state.documentFront);
+                    return;
+                }
+
+                showCameraUI("Capture ID Card (Back)", "doc-back");
+            } else if (currentStep === "doc-back") {
+                state.documentBack = base64Image;
+                await processDocumentExtraction(state.documentFront, state.documentBack);
             } else if (currentStep === "liveness") {
                 await performIdentityMatch(base64Image);
             }
