@@ -11,6 +11,8 @@
             max-width: 600px;
             margin: 20px auto;
             text-align: center;
+            color: #162033;
+            background: #f6f8fb;
         }
 
         .hidden {
@@ -36,10 +38,39 @@
             margin: 5px;
         }
 
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.68;
+        }
+
+        .button-loader {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .button-loader::before {
+            animation: spin 0.8s linear infinite;
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            border-top-color: #fff;
+            border-radius: 50%;
+            content: "";
+            height: 14px;
+            width: 14px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .step-card {
-            border: 1px solid #ddd;
+            background: #fff;
+            border: 1px solid #dce3ec;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
@@ -48,6 +79,74 @@
             gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
+        }
+
+        .verifier-header {
+            text-align: left;
+        }
+
+        .verifier-header h3 {
+            margin-bottom: 6px;
+        }
+
+        .verifier-header p {
+            color: #526070;
+            margin-top: 0;
+        }
+
+        .tab-list {
+            background: #eef3f8;
+            border: 1px solid #d7e0ea;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin: 18px 0;
+            padding: 4px;
+        }
+
+        .tab-button {
+            background: transparent;
+            border-radius: 6px;
+            color: #2a394b;
+            margin: 0;
+        }
+
+        .tab-button.active {
+            background: #fff;
+            color: #0b5ed7;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+        }
+
+        .tab-panel {
+            border: 1px solid #e1e7ef;
+            border-radius: 8px;
+            padding: 18px;
+            text-align: left;
+        }
+
+        .tab-panel h4 {
+            margin: 0 0 6px;
+        }
+
+        .tab-panel p {
+            color: #526070;
+            margin: 0 0 14px;
+        }
+
+        .tab-panel .choice-row {
+            justify-content: flex-start;
+        }
+
+        .result-box {
+            background: #f3f7fc;
+            border: 1px solid #d8e4f0;
+            border-radius: 8px;
+            margin-top: 14px;
+            padding: 12px;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         #status-msg {
@@ -60,7 +159,7 @@
 
 <body>
 
-    <h2>ID Verification</h2>
+    <h2>Identity Verification</h2>
 
     <div id="app">
         <div id="step-init" class="step-card">
@@ -78,16 +177,37 @@
                     style="width: 100%; padding: 8px; box-sizing: border-box;">
             </div>
 
-            <button onclick="validateAndStart()">Start ID Verification</button>
+            <button id="start-btn" onclick="validateAndStart()">Start ID Verification</button>
         </div>
 
         <div id="step-document-type" class="step-card hidden">
-            <h3>Select Document Type</h3>
-            <p>What document do you want to scan?</p>
+            <div class="verifier-header">
+                <p>Choose the custom verification flow or launch the hosted Hypersign widget.</p>
+            </div>
 
-            <div class="choice-row">
-                <button onclick="selectDocumentType('GOVT_ID')">Government ID</button>
-                <button onclick="selectDocumentType('PASSPORT')">Passport</button>
+            <div class="tab-list" role="tablist" aria-label="Verification type">
+                <button id="custom-tab" class="tab-button active" type="button" onclick="showVerifierTab('custom')">
+                    Custom Widget
+                </button>
+                <button id="hypersign-tab" class="tab-button" type="button" onclick="showVerifierTab('hypersign')">
+                    Hypersign Widget
+                </button>
+            </div>
+
+            <div id="custom-panel" class="tab-panel">
+                <p>Select the document type you want to scan.</p>
+
+                <div class="choice-row">
+                    <button onclick="selectDocumentType('GOVT_ID')">Government ID</button>
+                    <button onclick="selectDocumentType('PASSPORT')">Passport</button>
+                </div>
+            </div>
+
+            <div id="hypersign-panel" class="tab-panel hidden">
+                <p>Start a fresh hosted widget session for this user.</p>
+
+                <button id="hypersign-widget-btn" type="button" onclick="openHypersignWidget()">Open Hypersign Widget</button>
+                <div id="widget-result" class="result-box hidden"></div>
             </div>
         </div>
 
@@ -111,6 +231,7 @@
         // Configuration Constants
         const KYC_BASE_URL = "https://api.cavach.hypersign.id";
         const SSI_BASE_URL = "https://api.entity.hypersign.id";
+        let widgetUrl = "";
 
         /** * Application State Object 
          * Centralizes all tokens and IDs generated during the flow.
@@ -138,12 +259,26 @@
             documentBack: ""
         };
 
+        const userInputState = {
+            name: "",
+            email: ""
+        };
+
+        let isStarting = false;
+        let isOpeningWidget = false;
+        let hasOpenedHypersignWidget = false;
         let currentStep = "init";
+        let widgetWindow = null;
         const captureBtn = document.getElementById("capture-btn");
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
+        const startBtn = document.getElementById("start-btn");
+        const hypersignWidgetBtn = document.getElementById("hypersign-widget-btn");
+
+        window.addEventListener("message", handleWidgetMessage);
 
         function validateAndStart() {
+            if (isStarting) return;
             const name = document.getElementById('user-name').value.trim();
             const email = document.getElementById('user-email').value.trim();
 
@@ -151,6 +286,9 @@
                 alert("Name and Email are required to start verification.");
                 return;
             }
+
+            userInputState.name = name;
+            userInputState.email = email;
 
             // Pass the UI values into the async process
             startKycProcess(name, email);
@@ -161,47 +299,162 @@
          * Fetches required tokens and session context from your local backend.
          */
         async function startKycProcess(name, email) {
+            isStarting = true;
+            setButtonLoading(startBtn, true, "Starting...");
             updateStatus("Initializing session...");
             try {
-                // Constructing the request to pass user data to the backend
-                const response = await fetch(`${window.location.origin}/get-required-tokens-and-session-for-a-user`, {
-                    method: 'POST', // Changed to POST to support request body
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name,
-                        email
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Failed to reach backend");
-                }
-
-                const data = await response.json();
-
-                // Map backend response to local state
-                state.tokens.kycAdmin = data.kycAdminToken;
-                state.tokens.ssiAdmin = data.ssiAdminToken;
-                state.tokens.userBearer = data.userBearerToken;
-                state.issuer.did = data.issuerDid;
-                state.issuer.methodId = data.issuerVerificationMethodId;
-                state.session.id = data.sessionId;
-                state.user.did = data.userDid;
-                state.user.methodId = data.userVerificationMethodId;
+                await refreshKycSession(name, email);
 
                 showDocumentTypeStep();
             } catch (error) {
                 handleError("Initialization Error", error);
+            } finally {
+                isStarting = false;
+                setButtonLoading(startBtn, false);
             }
+        }
+
+        async function refreshKycSession(name, email) {
+            const response = await fetch(`${window.location.origin}/get-required-tokens-and-session-for-a-user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    email
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || data.message || "Failed to reach backend");
+            }
+
+            state.tokens.kycAdmin = data.kycAdminToken;
+            state.tokens.ssiAdmin = data.ssiAdminToken;
+            state.tokens.userBearer = data.kycUserAccessToken || data.userBearerToken;
+            widgetUrl = data.widgetUrl || "";
+            state.issuer.did = data.issuerDid;
+            state.issuer.methodId = data.issuerVerificationMethodId;
+            state.session.id = data.sessionId;
+            state.user.did = data.userDid;
+            state.user.methodId = data.userVerificationMethodId;
+
+            return data;
         }
 
         function showDocumentTypeStep() {
             currentStep = "document-type";
             document.querySelectorAll(".step-card").forEach(el => el.classList.add("hidden"));
             document.getElementById("step-document-type").classList.remove("hidden");
+            showVerifierTab("custom");
+            document.getElementById("widget-result").classList.add("hidden");
+        }
+
+        function showVerifierTab(tabName) {
+            const isCustom = tabName === "custom";
+
+            document.getElementById("custom-tab").classList.toggle("active", isCustom);
+            document.getElementById("hypersign-tab").classList.toggle("active", !isCustom);
+            document.getElementById("custom-panel").classList.toggle("hidden", !isCustom);
+            document.getElementById("hypersign-panel").classList.toggle("hidden", isCustom);
+        }
+
+        async function openHypersignWidget() {
+            if (isOpeningWidget || hasOpenedHypersignWidget) return;
+
+            if (!widgetUrl) {
+                alert("Widget URL is not configured. Add WIDGET_URL to your environment.");
+                return;
+            }
+
+            if (!state.session.id || !state.tokens.userBearer) {
+                alert("Please start verification first.");
+                return;
+            }
+
+            isOpeningWidget = true;
+            setButtonLoading(hypersignWidgetBtn, true, "Opening widget...");
+            showWidgetResult("Opening widget with the current verification session...");
+
+            try {
+                const url = buildWidgetUrl();
+
+                widgetWindow = window.open(url, "hypersignKycWidget", "width=520,height=760");
+
+                if (!widgetWindow) {
+                    throw new Error("Popup blocked. Please allow popups for this site.");
+                }
+
+                widgetWindow.focus();
+                hasOpenedHypersignWidget = true;
+                disableButton(hypersignWidgetBtn, "Widget opened");
+                showWidgetResult(`Widget opened.\nSession ID: ${state.session.id}\nReload the page to start a new session.`);
+            } catch (error) {
+                handleInlineError("Widget Error", error);
+                setButtonLoading(hypersignWidgetBtn, false);
+            } finally {
+                isOpeningWidget = false;
+            }
+        }
+
+        function buildWidgetUrl() {
+            const url = new URL(widgetUrl, window.location.origin);
+            url.searchParams.set("kycAccessToken", state.tokens.kycAdmin);
+            url.searchParams.set("ssiAccessToken", state.tokens.ssiAdmin);
+            url.searchParams.set("sessionId", state.session.id);
+            url.searchParams.set("kycUserAccessToken", state.tokens.userBearer);
+            return url.toString();
+        }
+
+        function handleWidgetMessage(event) {
+            if (!widgetUrl) return;
+
+            const expectedOrigin = new URL(widgetUrl, window.location.origin).origin;
+            if (event.origin !== expectedOrigin) return;
+            showWidgetResult(formatWidgetResult(event.data));
+        }
+
+        function formatWidgetResult(data) {
+            if (typeof data === "string") {
+                return data;
+            }
+
+            return JSON.stringify(data, null, 2);
+        }
+
+        function showWidgetResult(message) {
+            const resultEl = document.getElementById("widget-result");
+            resultEl.innerText = message;
+            resultEl.classList.remove("hidden");
+        }
+
+        function handleInlineError(title, err) {
+            console.error(`${title}:`, err);
+            showWidgetResult(`${title}: ${err.message}`);
+        }
+
+        function setButtonLoading(button, isLoading, loadingText) {
+            if (!button) return;
+
+            if (isLoading) {
+                button.dataset.defaultText = button.innerText;
+                button.disabled = true;
+                button.innerHTML = `<span class="button-loader">${loadingText || button.innerText}</span>`;
+                return;
+            }
+
+            button.disabled = false;
+            button.innerText = button.dataset.defaultText || button.innerText;
+        }
+
+        function disableButton(button, text) {
+            if (!button) return;
+
+            button.disabled = true;
+            button.innerText = text;
         }
 
         function selectDocumentType(documentType) {
@@ -299,7 +552,11 @@
                 });
 
                 const result = await response.json();
-                displayFinalStep(result.data.redirectUrl);
+                if (!response.ok || result.success === false) {
+                    throw new Error(result.message || result.error || "Consent submission failed");
+                }
+
+                displayFinalStep();
             } catch (error) {
                 handleError("Consent Error", error);
             }
@@ -323,7 +580,13 @@
                     verificationMethodId: state.user.methodId
                 })
             });
-            return await response.json();
+            const result = await response.json();
+
+            if (!response.ok || result.success === false || !result.presentation) {
+                throw new Error(result.message || result.error || "Failed to create SSI presentation");
+            }
+
+            return result;
         }
 
         /**
@@ -353,11 +616,11 @@
             location.reload();
         }
 
-        function displayFinalStep(url) {
+        function displayFinalStep() {
             document.getElementById('camera-container').classList.add('hidden');
             document.getElementById('step-document-type').classList.add("hidden");
             document.getElementById('step-final').classList.remove('hidden');
-            document.getElementById('result-text').innerText = `Verification Successful. Redirecting to: ${url || 'Dashboard'}`;
+            document.getElementById('result-text').innerText = "Verification Successful.";
         }
 
         // --- CAMERA UTILITY ---

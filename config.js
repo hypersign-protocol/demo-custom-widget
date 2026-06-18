@@ -8,6 +8,7 @@ const KYC_BASE_URL = process.env.KYC_BASE_URL
 const SSI_BASE_URL = process.env.SSI_BASE_URL;
 
 const DEVELOPER_DASHBOARD_SERVICE_BASE_URL = process.env.DEVELOPER_DASHBOARD_SERVICE_BASE_URL;
+const WIDGET_URL = process.env.WIDGET_URL || " https://verify.hypersign.id";
 // 2. Create Issuer Account
 const X_ISSUER_DID = process.env.ISSUER_DID;
 const X_ISSUER_VERMETHOD_ID = process.env.ISSUER_VERMETHOD_ID;
@@ -19,6 +20,7 @@ module.exports = {
     KYC_BASE_URL,
     SSI_BASE_URL,
     DEVELOPER_DASHBOARD_SERVICE_BASE_URL,
+    WIDGET_URL,
     X_ISSUER_DID,
     X_ISSUER_VERMETHOD_ID,
 }
