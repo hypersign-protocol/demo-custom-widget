@@ -5,14 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hypersign KYC Integration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
-            max-width: 600px;
-            margin: 20px auto;
-            text-align: center;
+            min-height: 100vh;
             color: #162033;
-            background: #f6f8fb;
+            background: #f4f7fb;
         }
 
         .hidden {
@@ -24,18 +22,7 @@
             width: 100%;
             border-radius: 8px;
             background: #000;
-            margin: 10px 0;
-        }
-
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin: 5px;
+            margin: 0;
         }
 
         button:disabled {
@@ -67,82 +54,34 @@
         }
 
         .step-card {
-            background: #fff;
-            border: 1px solid #dce3ec;
-            padding: 20px;
+            background: #ffffff;
+            border: 1px solid #dce5ef;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .choice-row {
             display: flex;
             gap: 10px;
-            justify-content: center;
+            justify-content: flex-start;
             flex-wrap: wrap;
         }
 
-        .verifier-header {
-            text-align: left;
-        }
-
-        .verifier-header h3 {
-            margin-bottom: 6px;
-        }
-
-        .verifier-header p {
-            color: #526070;
-            margin-top: 0;
-        }
-
-        .tab-list {
-            background: #eef3f8;
-            border: 1px solid #d7e0ea;
-            border-radius: 8px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-            margin: 18px 0;
-            padding: 4px;
-        }
-
-        .tab-button {
-            background: transparent;
-            border-radius: 6px;
-            color: #2a394b;
-            margin: 0;
-        }
-
-        .tab-button.active {
-            background: #fff;
-            color: #0b5ed7;
-            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
-        }
-
         .tab-panel {
-            border: 1px solid #e1e7ef;
-            border-radius: 8px;
-            padding: 18px;
-            text-align: left;
-        }
-
-        .tab-panel h4 {
-            margin: 0 0 6px;
-        }
-
-        .tab-panel p {
-            color: #526070;
-            margin: 0 0 14px;
-        }
-
-        .tab-panel .choice-row {
-            justify-content: flex-start;
+            border: 1px solid #e0e7ef;
+            border-top: 0;
+            border-radius: 0 0 8px 8px;
         }
 
         .result-box {
-            background: #f3f7fc;
-            border: 1px solid #d8e4f0;
+            background: #0f172a;
+            border: 1px solid #1e293b;
             border-radius: 8px;
-            margin-top: 14px;
+            color: #dbeafe;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            margin: 0;
+            max-height: 340px;
+            overflow: auto;
             padding: 12px;
             text-align: left;
             white-space: pre-wrap;
@@ -152,86 +91,165 @@
         #status-msg {
             margin-top: 10px;
             font-weight: bold;
-            color: #555;
+            color: #526070;
         }
     </style>
 </head>
 
 <body>
+    <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-9 col-xl-8">
+                <div class="mb-4">
+                    <p class="text-uppercase text-primary fw-semibold small mb-2">Hypersign KYC</p>
+                    <h1 class="h3 mb-2">Identity Verification</h1>
+                    <p class="text-secondary mb-0">Create a verification session, then continue with the custom flow or
+                        the hosted Hypersign widget.</p>
+                </div>
 
-    <h2>Identity Verification</h2>
+                <div id="app" class="d-grid gap-4">
+                    <div id="step-init" class="step-card flow-step shadow-sm p-4">
+                        <form onsubmit="event.preventDefault(); validateAndStart();">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h2 class="h5 mb-1">User details</h2>
+                                    <p class="text-secondary mb-2">Enter the user profile used to initialize the KYC
+                                        session.</p>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="user-name" class="form-label">Full Name</label>
+                                    <input type="text" id="user-name" class="form-control" placeholder="John Doe"
+                                        autocomplete="name">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="user-email" class="form-label">Email Address</label>
+                                    <input type="email" id="user-email" class="form-control"
+                                        placeholder="john@example.com" autocomplete="email">
+                                </div>
+                                <div class="col-12 d-flex align-items-center gap-3 flex-wrap">
+                                    <button id="start-btn" class="btn btn-primary" type="submit">Start
+                                        Verification</button>
+                                    <span id="init-status" class="text-secondary small"></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
 
-    <div id="app">
-        <div id="step-init" class="step-card">
-            <p>Please enter your details to begin identity verification.</p>
+                    <div id="step-document-type" class="step-card flow-step shadow-sm p-4 hidden">
+                        <div class="mb-3">
+                            <h2 class="h5 mb-1">Verification flow</h2>
+                            <p class="text-secondary mb-0">Choose the custom verification flow or launch the hosted
+                                Hypersign widget.</p>
+                        </div>
 
-            <div class="input-group" style="margin-bottom: 15px; text-align: left;">
-                <label for="user-name" style="display: block; margin-bottom: 5px;">Full Name</label>
-                <input type="text" id="user-name" placeholder="John Doe"
-                    style="width: 100%; padding: 8px; box-sizing: border-box;">
-            </div>
+                        <ul class="nav nav-tabs" role="tablist" aria-label="Verification type">
+                            <li class="nav-item" role="presentation">
+                                <button id="custom-tab" class="nav-link active" type="button" role="tab"
+                                    onclick="showVerifierTab('custom')">Custom Widget</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button id="hypersign-tab" class="nav-link" type="button" role="tab"
+                                    onclick="showVerifierTab('hypersign')">Hypersign Widget</button>
+                            </li>
+                        </ul>
 
-            <div class="input-group" style="margin-bottom: 20px; text-align: left;">
-                <label for="user-email" style="display: block; margin-bottom: 5px;">Email Address</label>
-                <input type="email" id="user-email" placeholder="john@example.com"
-                    style="width: 100%; padding: 8px; box-sizing: border-box;">
-            </div>
+                        <div id="custom-panel" class="tab-panel p-4">
+                            <div class="alert alert-info mb-4" role="alert">
+                                The custom widget flow first uploads the user's document, then asks the user to take a
+                                selfie for the liveliness check.
+                            </div>
+                            <p class="text-secondary">Select the document type you want to scan.</p>
 
-            <button id="start-btn" onclick="validateAndStart()">Start ID Verification</button>
-        </div>
+                            <div class="d-grid gap-2 mb-3" role="radiogroup" aria-label="Document type">
+                                <div class="form-check">
+                                    <input type="radio" class="form-check-input" name="document-type"
+                                        id="document-type-govt" onchange="setDocumentType('GOVT_ID')">
+                                    <label class="form-check-label" for="document-type-govt">Government ID</label>
+                                </div>
 
-        <div id="step-document-type" class="step-card hidden">
-            <div class="verifier-header">
-                <p>Choose the custom verification flow or launch the hosted Hypersign widget.</p>
-            </div>
+                                <div class="form-check">
+                                    <input type="radio" class="form-check-input" name="document-type"
+                                        id="document-type-passport" onchange="setDocumentType('PASSPORT')">
+                                    <label class="form-check-label" for="document-type-passport">Passport</label>
+                                </div>
+                            </div>
 
-            <div class="tab-list" role="tablist" aria-label="Verification type">
-                <button id="custom-tab" class="tab-button active" type="button" onclick="showVerifierTab('custom')">
-                    Custom Widget
-                </button>
-                <button id="hypersign-tab" class="tab-button" type="button" onclick="showVerifierTab('hypersign')">
-                    Hypersign Widget
-                </button>
-            </div>
+                            <button id="document-continue-btn" class="btn btn-primary" type="button"
+                                onclick="startSelectedDocumentCapture()" disabled>Continue</button>
+                        </div>
 
-            <div id="custom-panel" class="tab-panel">
-                <p>Select the document type you want to scan.</p>
+                        <div id="hypersign-panel" class="tab-panel p-4 hidden">
+                            <p class="text-secondary">Start a hosted widget session for this user.</p>
 
-                <div class="choice-row">
-                    <button onclick="selectDocumentType('GOVT_ID')">Government ID</button>
-                    <button onclick="selectDocumentType('PASSPORT')">Passport</button>
+                            <div id="hypersign-action-row" class="d-flex gap-2 flex-wrap">
+                                <button id="hypersign-widget-btn" class="btn btn-primary" type="button"
+                                    onclick="openHypersignWidget()">Open Hypersign Widget</button>
+                                <button id="hypersign-restart-btn" class="btn btn-outline-secondary hidden"
+                                    type="button" onclick="restartVerificationProcess()">Restart Process</button>
+                            </div>
+                            <pre id="widget-result" class="result-box mt-3 hidden"></pre>
+                        </div>
+                    </div>
+
+                    <div id="camera-container" class="step-card flow-step shadow-sm p-4 hidden">
+                        <h2 id="camera-title" class="h5 mb-3">Capture Document</h2>
+                        <video id="video" autoplay playsinline></video>
+                        <div class="mt-3 d-flex gap-2 flex-wrap">
+                            <button id="back-to-tabs-btn" class="btn btn-outline-secondary" type="button"
+                                onclick="backToVerificationTabs()">Back</button>
+                            <button id="capture-btn" class="btn btn-primary" type="button">Snap Photo</button>
+                        </div>
+                        <p id="status-msg"></p>
+                        <canvas id="canvas" class="hidden"></canvas>
+                    </div>
+
+                    <div id="step-final" class="step-card flow-step shadow-sm p-4 hidden">
+                        <h2 class="h5 text-success mb-2">Verification Complete</h2>
+                        <p id="result-text" class="text-secondary"></p>
+                        <button class="btn btn-primary" type="button" onclick="location.reload()">Start ID
+                            Verification</button>
+                    </div>
+
+                    <section class="step-card shadow-sm p-4">
+                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+                            <div>
+                                <h2 class="h5 mb-1">API response log</h2>
+                                <p class="text-secondary mb-0">The session response appears here so you can copy
+                                    `kycUserAccessToken`.</p>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyApiLog()">Copy
+                                JSON</button>
+                        </div>
+                        <div id="kyc-token-row" class="mb-3 hidden" style="display: none;">
+                            <label for="kyc-user-access-token" class="form-label">kycUserAccessToken</label>
+                            <div class="input-group">
+                                <textarea id="kyc-user-access-token" class="form-control font-monospace small" rows="3"
+                                    readonly></textarea>
+                                <button class="btn btn-outline-primary" type="button"
+                                    onclick="copyKycUserAccessToken()">Copy Token</button>
+                            </div>
+                        </div>
+                        <div id="widget-url-row" class="mb-3 hidden">
+                            <label for="hypersign-widget-url" class="form-label">Hypersign widget URL</label>
+                            <div class="input-group">
+                                <textarea id="hypersign-widget-url" class="form-control font-monospace small" rows="4"
+                                    readonly></textarea>
+                                <button class="btn btn-outline-primary" type="button" onclick="copyWidgetUrl()">Copy
+                                    URL</button>
+                            </div>
+                        </div>
+                        <pre id="api-response-log" class="result-box"
+                            style="display: none;">Submit the form to generate a session.</pre>
+                    </section>
                 </div>
             </div>
-
-            <div id="hypersign-panel" class="tab-panel hidden">
-                <p>Start a fresh hosted widget session for this user.</p>
-
-                <button id="hypersign-widget-btn" type="button" onclick="openHypersignWidget()">Open Hypersign Widget</button>
-                <div id="widget-result" class="result-box hidden"></div>
-            </div>
         </div>
-
-        <div id="camera-container" class="step-card hidden">
-            <h3 id="camera-title">Capture Document</h3>
-            <video id="video" autoplay playsinline style="width: 100%; max-width: 400px; border-radius: 8px;"></video>
-            <div style="margin-top: 10px;">
-                <button id="capture-btn">Snap Photo</button>
-            </div>
-            <p id="status-msg"></p>
-            <canvas id="canvas" class="hidden"></canvas>
-        </div>
-
-        <div id="step-final" class="step-card hidden">
-            <h3 style="color: green;">Verification Complete!</h3>
-            <p id="result-text"></p>
-            <button onclick="location.reload()">Start ID Verification</button>
-        </div>
-    </div>
+    </main>
     <script>
         // Configuration Constants
         const KYC_BASE_URL = "https://api.cavach.hypersign.id";
         const SSI_BASE_URL = "https://api.entity.hypersign.id";
-        let widgetUrl = "";
+        let widgetUrl = "https://verify.hypersign.id";
 
         /** * Application State Object 
          * Centralizes all tokens and IDs generated during the flow.
@@ -266,14 +284,23 @@
 
         let isStarting = false;
         let isOpeningWidget = false;
-        let hasOpenedHypersignWidget = false;
+        let isHypersignWidgetVerified = false;
+        let widgetCloseTimer = null;
         let currentStep = "init";
         let widgetWindow = null;
         const captureBtn = document.getElementById("capture-btn");
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
         const startBtn = document.getElementById("start-btn");
+        const hypersignActionRow = document.getElementById("hypersign-action-row");
         const hypersignWidgetBtn = document.getElementById("hypersign-widget-btn");
+        const hypersignRestartBtn = document.getElementById("hypersign-restart-btn");
+        const apiResponseLog = document.getElementById("api-response-log");
+        const kycTokenRow = document.getElementById("kyc-token-row");
+        const kycUserAccessTokenInput = document.getElementById("kyc-user-access-token");
+        const widgetUrlRow = document.getElementById("widget-url-row");
+        const hypersignWidgetUrlInput = document.getElementById("hypersign-widget-url");
+        const documentContinueBtn = document.getElementById("document-continue-btn");
 
         window.addEventListener("message", handleWidgetMessage);
 
@@ -329,6 +356,8 @@
             const data = await response.json();
 
             if (!response.ok) {
+                logApiResponse(data);
+                updateWidgetUrlField();
                 throw new Error(data.error || data.message || "Failed to reach backend");
             }
 
@@ -341,16 +370,20 @@
             state.session.id = data.sessionId;
             state.user.did = data.userDid;
             state.user.methodId = data.userVerificationMethodId;
+            resetHypersignWidgetControls();
+            logApiResponse(data);
+            updateWidgetUrlField();
 
             return data;
         }
 
         function showDocumentTypeStep() {
             currentStep = "document-type";
-            document.querySelectorAll(".step-card").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".flow-step").forEach(el => el.classList.add("hidden"));
             document.getElementById("step-document-type").classList.remove("hidden");
             showVerifierTab("custom");
             document.getElementById("widget-result").classList.add("hidden");
+            documentContinueBtn.disabled = !state.documentType;
         }
 
         function showVerifierTab(tabName) {
@@ -360,10 +393,19 @@
             document.getElementById("hypersign-tab").classList.toggle("active", !isCustom);
             document.getElementById("custom-panel").classList.toggle("hidden", !isCustom);
             document.getElementById("hypersign-panel").classList.toggle("hidden", isCustom);
+
+            if (!isCustom && !isHypersignWidgetVerified) {
+                resetHypersignWidgetControls({ keepResult: true });
+            }
         }
 
         async function openHypersignWidget() {
-            if (isOpeningWidget || hasOpenedHypersignWidget) return;
+            if (isOpeningWidget) return;
+
+            if (widgetWindow && !widgetWindow.closed) {
+                widgetWindow.focus();
+                return;
+            }
 
             if (!widgetUrl) {
                 alert("Widget URL is not configured. Add WIDGET_URL to your environment.");
@@ -382,21 +424,65 @@
             try {
                 const url = buildWidgetUrl();
 
-                widgetWindow = window.open(url, "hypersignKycWidget", "width=520,height=760");
+                widgetWindow = window.open(url, "hypersignKycWidget", "width=440,height=900");
 
                 if (!widgetWindow) {
                     throw new Error("Popup blocked. Please allow popups for this site.");
                 }
 
                 widgetWindow.focus();
-                hasOpenedHypersignWidget = true;
-                disableButton(hypersignWidgetBtn, "Widget opened");
-                showWidgetResult(`Widget opened.\nSession ID: ${state.session.id}\nReload the page to start a new session.`);
+                setButtonLoading(hypersignWidgetBtn, true, "Waiting for user...");
+                showWidgetResult(`Widget opened.\nSession ID: ${state.session.id}\nWaiting for the user to finish in the Hypersign widget.`);
+                startWidgetCloseMonitor();
             } catch (error) {
                 handleInlineError("Widget Error", error);
                 setButtonLoading(hypersignWidgetBtn, false);
             } finally {
                 isOpeningWidget = false;
+            }
+        }
+
+        function startWidgetCloseMonitor() {
+            clearWidgetCloseMonitor();
+
+            widgetCloseTimer = window.setInterval(() => {
+                if (!widgetWindow || widgetWindow.closed) {
+                    resetHypersignWidgetButton("Widget closed. You can open it again.");
+                }
+            }, 700);
+        }
+
+        function clearWidgetCloseMonitor() {
+            if (widgetCloseTimer) {
+                window.clearInterval(widgetCloseTimer);
+                widgetCloseTimer = null;
+            }
+        }
+
+        function resetHypersignWidgetButton(message) {
+            clearWidgetCloseMonitor();
+            widgetWindow = null;
+            resetHypersignWidgetControls({ keepResult: true });
+
+            if (message) {
+                showWidgetResult(message);
+            }
+        }
+
+        function resetHypersignWidgetControls(options = {}) {
+            isOpeningWidget = false;
+            isHypersignWidgetVerified = false;
+            hypersignActionRow.classList.remove("hidden");
+            hypersignWidgetBtn.disabled = false;
+            hypersignWidgetBtn.classList.remove("btn-success");
+            hypersignWidgetBtn.classList.add("btn-primary");
+            hypersignWidgetBtn.innerText = hypersignWidgetBtn.dataset.defaultText || "Open Hypersign Widget";
+            hypersignWidgetBtn.dataset.defaultText = "Open Hypersign Widget";
+            hypersignRestartBtn.classList.add("hidden");
+
+            if (!options.keepResult) {
+                document.getElementById("widget-result").classList.add("hidden");
+                document.getElementById("widget-result").innerText = "";
             }
         }
 
@@ -412,9 +498,9 @@
         function handleWidgetMessage(event) {
             if (!widgetUrl) return;
 
-            const expectedOrigin = new URL(widgetUrl, window.location.origin).origin;
-            if (event.origin !== expectedOrigin) return;
-            showWidgetResult(formatWidgetResult(event.data));
+            // const expectedOrigin = new URL(widgetUrl, window.location.origin).origin;
+            // if (event.origin !== expectedOrigin) return;
+            markHypersignWidgetVerified(formatWidgetResult(event.data));
         }
 
         function formatWidgetResult(data) {
@@ -431,6 +517,142 @@
             resultEl.classList.remove("hidden");
         }
 
+        function markHypersignWidgetVerified(message) {
+            clearWidgetCloseMonitor();
+            isHypersignWidgetVerified = true;
+            showWidgetResult(message);
+            hypersignWidgetBtn.disabled = true;
+            hypersignWidgetBtn.classList.remove("btn-primary");
+            hypersignWidgetBtn.classList.add("btn-success");
+            hypersignWidgetBtn.innerText = "Verified";
+            hypersignRestartBtn.classList.remove("hidden");
+        }
+
+        function restartVerificationProcess() {
+            clearWidgetCloseMonitor();
+            stopCamera();
+
+            if (widgetWindow && !widgetWindow.closed) {
+                widgetWindow.close();
+            }
+
+            clearSessionState();
+            resetHypersignWidgetControls();
+            resetDocumentSelection();
+            clearSessionOutputs();
+            updateStatus("");
+
+            document.querySelectorAll(".flow-step").forEach(el => el.classList.add("hidden"));
+            document.getElementById("step-init").classList.remove("hidden");
+        }
+
+        function clearSessionState() {
+            state.tokens.kycAdmin = "";
+            state.tokens.ssiAdmin = "";
+            state.tokens.userBearer = "";
+            state.issuer.did = "";
+            state.issuer.methodId = "";
+            state.user.did = "";
+            state.user.methodId = "";
+            state.session.id = "";
+            state.session.extractionToken = "";
+            state.documentType = "";
+            state.documentFront = "";
+            state.documentBack = "";
+            userInputState.name = "";
+            userInputState.email = "";
+            widgetWindow = null;
+            currentStep = "init";
+        }
+
+        function resetDocumentSelection() {
+            document.querySelectorAll('input[name="document-type"]').forEach(input => {
+                input.checked = false;
+            });
+            documentContinueBtn.disabled = true;
+        }
+
+        function clearSessionOutputs() {
+            document.getElementById("user-name").value = "";
+            document.getElementById("user-email").value = "";
+            kycUserAccessTokenInput.value = "";
+            hypersignWidgetUrlInput.value = "";
+            kycTokenRow.classList.add("hidden");
+            widgetUrlRow.classList.add("hidden");
+
+            if (apiResponseLog) {
+                apiResponseLog.innerText = "Submit the form to generate a session.";
+            }
+        }
+
+        function logApiResponse(data) {
+            const token = data.kycUserAccessToken || data.userBearerToken || "";
+
+            kycUserAccessTokenInput.value = token;
+            kycTokenRow.classList.toggle("hidden", !token);
+            if (apiResponseLog) apiResponseLog.innerText = JSON.stringify(data, null, 2);
+        }
+
+        function updateWidgetUrlField() {
+            const hasWidgetSession = widgetUrl && state.session.id && state.tokens.userBearer;
+            const url = hasWidgetSession ? buildWidgetUrl() : "";
+
+            hypersignWidgetUrlInput.value = url;
+            widgetUrlRow.classList.toggle("hidden", !url);
+        }
+
+        async function copyKycUserAccessToken() {
+            const token = kycUserAccessTokenInput.value;
+
+            if (!token) {
+                alert("Generate a session first.");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(token);
+                updateStatus("kycUserAccessToken copied.");
+            } catch (error) {
+                kycUserAccessTokenInput.focus();
+                kycUserAccessTokenInput.select();
+                alert("Could not copy automatically. The token is selected so you can copy it manually.");
+            }
+        }
+
+        async function copyWidgetUrl() {
+            const url = hypersignWidgetUrlInput.value;
+
+            if (!url) {
+                alert("Generate a session first.");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(url);
+                updateStatus("Hypersign widget URL copied.");
+            } catch (error) {
+                hypersignWidgetUrlInput.focus();
+                hypersignWidgetUrlInput.select();
+                alert("Could not copy automatically. The URL is selected so you can copy it manually.");
+            }
+        }
+
+        async function copyApiLog() {
+            const logText = apiResponseLog?.innerText || "";
+
+            if (!logText || logText === "Submit the form to generate a session.") {
+                alert("Generate a session first.");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(logText);
+                updateStatus("API response copied.");
+            } catch (error) {
+                alert("Could not copy automatically. Please select the JSON and copy it manually.");
+            }
+        }
+
         function handleInlineError(title, err) {
             console.error(`${title}:`, err);
             showWidgetResult(`${title}: ${err.message}`);
@@ -440,7 +662,9 @@
             if (!button) return;
 
             if (isLoading) {
-                button.dataset.defaultText = button.innerText;
+                if (!button.dataset.defaultText) {
+                    button.dataset.defaultText = button.innerText;
+                }
                 button.disabled = true;
                 button.innerHTML = `<span class="button-loader">${loadingText || button.innerText}</span>`;
                 return;
@@ -450,24 +674,30 @@
             button.innerText = button.dataset.defaultText || button.innerText;
         }
 
-        function disableButton(button, text) {
-            if (!button) return;
-
-            button.disabled = true;
-            button.innerText = text;
-        }
-
-        function selectDocumentType(documentType) {
+        function setDocumentType(documentType) {
             state.documentType = documentType;
             state.documentFront = "";
             state.documentBack = "";
+            documentContinueBtn.disabled = false;
+        }
 
-            if (documentType === "PASSPORT") {
+        function startSelectedDocumentCapture() {
+            if (!state.documentType) {
+                alert("Please select a document type first.");
+                return;
+            }
+
+            if (state.documentType === "PASSPORT") {
                 showCameraUI("Capture Passport (Front)", "doc-extract");
                 return;
             }
 
             showCameraUI("Capture ID Card (Front)", "doc-extract");
+        }
+
+        function selectDocumentType(documentType) {
+            setDocumentType(documentType);
+            startSelectedDocumentCapture();
         }
 
         async function processDocumentExtraction(frontImage, backImage) {
@@ -608,6 +838,7 @@
 
         function updateStatus(msg) {
             document.getElementById('status-msg').innerText = msg;
+            document.getElementById('init-status').innerText = msg;
         }
 
         function handleError(title, err) {
@@ -623,11 +854,20 @@
             document.getElementById('result-text').innerText = "Verification Successful.";
         }
 
+        function backToVerificationTabs() {
+            stopCamera();
+            state.documentFront = "";
+            state.documentBack = "";
+            state.session.extractionToken = "";
+            updateStatus("");
+            showDocumentTypeStep();
+        }
+
         // --- CAMERA UTILITY ---
         async function showCameraUI(title, step) {
             currentStep = step;
             updateStatus('');
-            document.querySelectorAll('.step-card').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.flow-step').forEach(el => el.classList.add('hidden'));
             document.getElementById('camera-container').classList.remove('hidden');
             document.getElementById('camera-title').innerText = title;
 
@@ -654,6 +894,7 @@
         function stopCamera() {
             if (video.srcObject) {
                 video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
             }
         }
 
