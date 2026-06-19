@@ -8,7 +8,18 @@ const KYC_BASE_URL = process.env.KYC_BASE_URL
 const SSI_BASE_URL = process.env.SSI_BASE_URL;
 
 const DEVELOPER_DASHBOARD_SERVICE_BASE_URL = process.env.DEVELOPER_DASHBOARD_SERVICE_BASE_URL;
-const WIDGET_URL = process.env.WIDGET_URL || " https://verify.hypersign.id";
+
+function normalizeWidgetUrl(value) {
+    const normalizedUrl = (value || "https://verify.hypersign.id").trim();
+
+    if (normalizedUrl.startsWith("http://verify.hypersign.id")) {
+        return normalizedUrl.replace(/^http:\/\//, "https://");
+    }
+
+    return normalizedUrl;
+}
+
+const WIDGET_URL = normalizeWidgetUrl(process.env.WIDGET_URL);
 // 2. Create Issuer Account
 const X_ISSUER_DID = process.env.ISSUER_DID;
 const X_ISSUER_VERMETHOD_ID = process.env.ISSUER_VERMETHOD_ID;

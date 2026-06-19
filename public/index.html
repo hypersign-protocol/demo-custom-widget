@@ -88,6 +88,20 @@
             word-break: break-word;
         }
 
+        .embedded-widget-shell {
+            border: 1px solid #dbe4ef;
+            border-radius: 8px;
+            height: min(1200px, 110vh);
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .embedded-widget-frame {
+            border: 0;
+            height: 100%;
+            width: 100%;
+        }
+
         #status-msg {
             margin-top: 10px;
             font-weight: bold;
@@ -100,12 +114,12 @@
     <main class="container py-5">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-9 col-xl-8">
-                <div class="mb-4">
+                <!-- <div class="mb-4">
                     <p class="text-uppercase text-primary fw-semibold small mb-2">Hypersign KYC</p>
                     <h1 class="h3 mb-2">Identity Verification</h1>
                     <p class="text-secondary mb-0">Create a verification session, then continue with the custom flow or
                         the hosted Hypersign widget.</p>
-                </div>
+                </div> -->
 
                 <div id="app" class="d-grid gap-4">
                     <div id="step-init" class="step-card flow-step shadow-sm p-4">
@@ -179,13 +193,21 @@
                         </div>
 
                         <div id="hypersign-panel" class="tab-panel p-4 hidden">
-                            <p class="text-secondary">Start a hosted widget session for this user.</p>
+                            <p class="text-secondary">Start a hosted widget session inside this page.</p>
 
                             <div id="hypersign-action-row" class="d-flex gap-2 flex-wrap">
                                 <button id="hypersign-widget-btn" class="btn btn-primary" type="button"
-                                    onclick="openHypersignWidget()">Open Hypersign Widget</button>
+                                    onclick="openHypersignWidget()">Load Hypersign Widget</button>
+                                <button id="hypersign-popup-btn" class="btn btn-outline-primary" type="button"
+                                    onclick="openHypersignWidgetPopup()">Open in New Window</button>
                                 <button id="hypersign-restart-btn" class="btn btn-outline-secondary hidden"
                                     type="button" onclick="restartVerificationProcess()">Restart Process</button>
+                            </div>
+                            <div id="hypersign-iframe-wrap" class="embedded-widget-shell mt-3 hidden">
+                                <iframe id="hypersign-widget-frame" class="embedded-widget-frame"
+                                    title="Hypersign KYC Widget"
+                                    allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"
+                                    onerror="handleEmbeddedWidgetError()"></iframe>
                             </div>
                             <pre id="widget-result" class="result-box mt-3 hidden"></pre>
                         </div>
@@ -285,16 +307,20 @@
         let isStarting = false;
         let isOpeningWidget = false;
         let isHypersignWidgetVerified = false;
+        let isHypersignWidgetActive = false;
         let widgetCloseTimer = null;
-        let currentStep = "init";
         let widgetWindow = null;
+        let currentStep = "init";
         const captureBtn = document.getElementById("capture-btn");
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
         const startBtn = document.getElementById("start-btn");
         const hypersignActionRow = document.getElementById("hypersign-action-row");
         const hypersignWidgetBtn = document.getElementById("hypersign-widget-btn");
+        const hypersignPopupBtn = document.getElementById("hypersign-popup-btn");
         const hypersignRestartBtn = document.getElementById("hypersign-restart-btn");
+        const hypersignIframeWrap = document.getElementById("hypersign-iframe-wrap");
+        const hypersignWidgetFrame = document.getElementById("hypersign-widget-frame");
         const apiResponseLog = document.getElementById("api-response-log");
         const kycTokenRow = document.getElementById("kyc-token-row");
         const kycUserAccessTokenInput = document.getElementById("kyc-user-access-token");
@@ -364,7 +390,7 @@
             state.tokens.kycAdmin = data.kycAdminToken;
             state.tokens.ssiAdmin = data.ssiAdminToken;
             state.tokens.userBearer = data.kycUserAccessToken || data.userBearerToken;
-            widgetUrl = data.widgetUrl || "";
+            widgetUrl = normalizeWidgetUrl(data.widgetUrl || "");
             state.issuer.did = data.issuerDid;
             state.issuer.methodId = data.issuerVerificationMethodId;
             state.session.id = data.sessionId;
@@ -393,19 +419,10 @@
             document.getElementById("hypersign-tab").classList.toggle("active", !isCustom);
             document.getElementById("custom-panel").classList.toggle("hidden", !isCustom);
             document.getElementById("hypersign-panel").classList.toggle("hidden", isCustom);
-
-            if (!isCustom && !isHypersignWidgetVerified) {
-                resetHypersignWidgetControls({ keepResult: true });
-            }
         }
 
         async function openHypersignWidget() {
-            if (isOpeningWidget) return;
-
-            if (widgetWindow && !widgetWindow.closed) {
-                widgetWindow.focus();
-                return;
-            }
+            if (isOpeningWidget || isHypersignWidgetVerified) return;
 
             if (!widgetUrl) {
                 alert("Widget URL is not configured. Add WIDGET_URL to your environment.");
@@ -418,12 +435,45 @@
             }
 
             isOpeningWidget = true;
-            setButtonLoading(hypersignWidgetBtn, true, "Opening widget...");
-            showWidgetResult("Opening widget with the current verification session...");
+            setButtonLoading(hypersignWidgetBtn, true, "Loading widget...");
+            showWidgetResult("Loading the hosted widget inside this page...");
 
             try {
                 const url = buildWidgetUrl();
+                hypersignWidgetFrame.src = url;
+                hypersignIframeWrap.classList.remove("hidden");
+                isHypersignWidgetActive = true;
+                setButtonLoading(hypersignWidgetBtn, true, "Waiting for user...");
+                hypersignRestartBtn.classList.remove("hidden");
+                showWidgetResult(`Widget loaded.\nSession ID: ${state.session.id}\nWaiting for the user to finish in the embedded Hypersign widget.\nIf the embedded frame does not render, use "Open in New Window".`);
+            } catch (error) {
+                handleInlineError("Widget Error", error);
+                resetHypersignWidgetControls({ keepResult: true });
+            } finally {
+                isOpeningWidget = false;
+            }
+        }
 
+        async function openHypersignWidgetPopup() {
+            if (isOpeningWidget || isHypersignWidgetVerified) return;
+
+            if (!widgetUrl) {
+                alert("Widget URL is not configured. Add WIDGET_URL to your environment.");
+                return;
+            }
+
+            if (!state.session.id || !state.tokens.userBearer) {
+                alert("Please start verification first.");
+                return;
+            }
+
+            isOpeningWidget = true;
+            resetEmbeddedWidget();
+            setButtonLoading(hypersignWidgetBtn, false);
+            setButtonLoading(hypersignPopupBtn, true, "Opening...");
+
+            try {
+                const url = buildWidgetUrl();
                 widgetWindow = window.open(url, "hypersignKycWidget", "width=440,height=900");
 
                 if (!widgetWindow) {
@@ -431,12 +481,13 @@
                 }
 
                 widgetWindow.focus();
-                setButtonLoading(hypersignWidgetBtn, true, "Waiting for user...");
-                showWidgetResult(`Widget opened.\nSession ID: ${state.session.id}\nWaiting for the user to finish in the Hypersign widget.`);
+                setButtonLoading(hypersignPopupBtn, true, "Waiting in window...");
+                hypersignRestartBtn.classList.remove("hidden");
+                showWidgetResult(`Widget opened in a new window.\nSession ID: ${state.session.id}\nWaiting for the user to finish in the Hypersign widget.`);
                 startWidgetCloseMonitor();
             } catch (error) {
                 handleInlineError("Widget Error", error);
-                setButtonLoading(hypersignWidgetBtn, false);
+                setButtonLoading(hypersignPopupBtn, false);
             } finally {
                 isOpeningWidget = false;
             }
@@ -447,7 +498,8 @@
 
             widgetCloseTimer = window.setInterval(() => {
                 if (!widgetWindow || widgetWindow.closed) {
-                    resetHypersignWidgetButton("Widget closed. You can open it again.");
+                    resetHypersignWidgetControls({ keepResult: true });
+                    showWidgetResult("Widget window closed. You can open it again.");
                 }
             }, 700);
         }
@@ -459,26 +511,36 @@
             }
         }
 
-        function resetHypersignWidgetButton(message) {
-            clearWidgetCloseMonitor();
-            widgetWindow = null;
-            resetHypersignWidgetControls({ keepResult: true });
+        function handleEmbeddedWidgetError() {
+            resetEmbeddedWidget();
+            setButtonLoading(hypersignWidgetBtn, false);
+            showWidgetResult("Embedded widget could not render. Use Open in New Window to continue.");
+        }
 
-            if (message) {
-                showWidgetResult(message);
-            }
+        function resetEmbeddedWidget() {
+            isHypersignWidgetActive = false;
+            hypersignIframeWrap.classList.add("hidden");
+            hypersignWidgetFrame.removeAttribute("src");
         }
 
         function resetHypersignWidgetControls(options = {}) {
+            clearWidgetCloseMonitor();
             isOpeningWidget = false;
             isHypersignWidgetVerified = false;
+            isHypersignWidgetActive = false;
+            widgetWindow = null;
             hypersignActionRow.classList.remove("hidden");
             hypersignWidgetBtn.disabled = false;
             hypersignWidgetBtn.classList.remove("btn-success");
             hypersignWidgetBtn.classList.add("btn-primary");
-            hypersignWidgetBtn.innerText = hypersignWidgetBtn.dataset.defaultText || "Open Hypersign Widget";
-            hypersignWidgetBtn.dataset.defaultText = "Open Hypersign Widget";
+            hypersignWidgetBtn.innerText = hypersignWidgetBtn.dataset.defaultText || "Load Hypersign Widget";
+            hypersignWidgetBtn.dataset.defaultText = "Load Hypersign Widget";
+            hypersignPopupBtn.disabled = false;
+            hypersignPopupBtn.classList.remove("hidden");
+            hypersignPopupBtn.innerText = hypersignPopupBtn.dataset.defaultText || "Open in New Window";
+            hypersignPopupBtn.dataset.defaultText = "Open in New Window";
             hypersignRestartBtn.classList.add("hidden");
+            resetEmbeddedWidget();
 
             if (!options.keepResult) {
                 document.getElementById("widget-result").classList.add("hidden");
@@ -487,7 +549,7 @@
         }
 
         function buildWidgetUrl() {
-            const url = new URL(widgetUrl, window.location.origin);
+            const url = new URL(normalizeWidgetUrl(widgetUrl), window.location.origin);
             url.searchParams.set("kycAccessToken", state.tokens.kycAdmin);
             url.searchParams.set("ssiAccessToken", state.tokens.ssiAdmin);
             url.searchParams.set("sessionId", state.session.id);
@@ -495,12 +557,28 @@
             return url.toString();
         }
 
+        function normalizeWidgetUrl(url) {
+            const normalizedUrl = (url || "").trim();
+
+            if (normalizedUrl.startsWith("http://verify.hypersign.id")) {
+                return normalizedUrl.replace(/^http:\/\//, "https://");
+            }
+
+            return normalizedUrl;
+        }
+
         function handleWidgetMessage(event) {
             if (!widgetUrl) return;
+            const fromEmbeddedWidget = hypersignWidgetFrame.contentWindow && event.source === hypersignWidgetFrame.contentWindow;
+            const fromPopupWidget = widgetWindow && event.source === widgetWindow;
+
+            if (!fromEmbeddedWidget && !fromPopupWidget) return;
 
             // const expectedOrigin = new URL(widgetUrl, window.location.origin).origin;
             // if (event.origin !== expectedOrigin) return;
-            markHypersignWidgetVerified(formatWidgetResult(event.data));
+            markHypersignWidgetVerified(formatWidgetResult(event.data), {
+                closeEmbeddedWidget: fromEmbeddedWidget
+            });
         }
 
         function formatWidgetResult(data) {
@@ -517,14 +595,22 @@
             resultEl.classList.remove("hidden");
         }
 
-        function markHypersignWidgetVerified(message) {
+        function markHypersignWidgetVerified(message, options = {}) {
             clearWidgetCloseMonitor();
             isHypersignWidgetVerified = true;
+            isHypersignWidgetActive = false;
+            widgetWindow = null;
+
+            if (options.closeEmbeddedWidget) {
+                resetEmbeddedWidget();
+            }
+
             showWidgetResult(message);
             hypersignWidgetBtn.disabled = true;
             hypersignWidgetBtn.classList.remove("btn-primary");
             hypersignWidgetBtn.classList.add("btn-success");
             hypersignWidgetBtn.innerText = "Verified";
+            hypersignPopupBtn.classList.add("hidden");
             hypersignRestartBtn.classList.remove("hidden");
         }
 
