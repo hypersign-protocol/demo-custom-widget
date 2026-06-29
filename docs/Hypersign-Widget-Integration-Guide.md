@@ -51,7 +51,18 @@ Initialize the base endpoints for the Hypersign and credential routing services:
 ```javascript
 const X_ISSUER_DID = "did:hid:z6MkmEFC8N1AUsinEBNSszXoepHb45p38ZwidV58r1HPqCkU";
 const X_ISSUER_VERMETHOD_ID = "did:hid:z6MkmEFC8N1AUsinEBNSszXoepHb45p38ZwidV58r1HPqCkU#key-1";
+```
 
+You can keep these variables in your `.env`
+
+```
+KYC_BASE_URL=
+SSI_BASE_URL=
+DEVELOPER_DASHBOARD_SERVICE_BASE_URL=
+X_ISSUER_DID=
+X_ISSUER_VERMETHOD_ID=
+SSI_API_SECRET=
+KYC_API_SECRET=
 ```
 
 ---
