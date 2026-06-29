@@ -1,41 +1,41 @@
+# 📄 Hypersign KYC ID Widget Integration Guide
 
-# 📄 Hypersign KYC API Integration Guide
-
-This developer guide outlines the end-to-end steps required to integrate **Hypersign KYC and SSI APIs** using a custom UI. By utilizing these foundational APIs directly instead of the pre-built widget, you maintain full control over your client UI/UX while leveraging decentralized identity (DID) infrastructure.
+This document is a comprehensive integration guide for developers embedding the pre-built **Hypersign KYC ID Widget** into their web applications. By utilizing the pre-built widget, you can deploy a secure, compliant, and conversion-optimized identity verification flow with minimal development effort, while leaving the heavy lifting of biometric processing and decentralized identity (DID) registration to Hypersign's backend.
 
 ---
 
 ## 1. Integration Architecture
 
-The integration follows a **Security-First Handshake** model to cleanly decouple frontend interfaces from sensitive administrative keys.
+The integration follows a **Security-First Delegated Handshake** model:
 
-
-```
-
-+------------------+          +------------------+          +------------------------+
-|  Client Browser  |          |  Your Backend    |          | Hypersign SaaS Network |
-+------------------+          +------------------+          +------------------------+
-|                             |                                 |
-| ---- [1. Get Credentials] ->|                                 |
-|                             | ---- [2. Auth & Create DID] --->|
-|                             | <--- [3. Return Bearer Tokens] -|
-| <--- [4. Pass Session/Jwt] -|                                 |
-|                             |                                 |
-| ---------------------- [5. Run Biometrics / KYC] ------------>|
-|                             |                                 |
-|                             |<---- [6. Fire Webhook (Done)] --|
+* **Backend Application:** Securely manages your administrative `API_SECRET` keys, handles short-lived orchestration tokens, maps user profiles to Decentralized Identifiers (DIDs), and manages session instantiation.
+* **Hypersign ID Widget:** A pre-built, optimized UI overlay hosted by Hypersign that seamlessly manages user-facing permissions, camera captures, automated OCR extraction, liveness detection, and zero-knowledge signature generation.
+* **Frontend Application:** Initializes the client-side session handshake, embeds the Hypersign ID Widget popup container, and listens for real-time interface messaging events (such as session termination or validation errors) to seamlessly update your app's user interface.
 
 ```
 
-* **Backend Application:** Securely manages the `API_SECRET`, fetches short-lived administrative tokens, registers or fetches user DIDs, and manages session state.
-* **Frontend UI / Widget:** Mounts the verification viewport, orchestrates client-side events, and handles real-time response states.
-
++--------------------------------------------------+          +------------------+          +--------------------------------+
+|                  Client Browser                  |          |  Your Backend    |          | Hypersign  Verification Service|
++--------------------------------------------------+          +------------------+          +--------------------------------+
+|  Host Application   |    Hypersign ID Widget     |          |                  |          |                                |
++---------------------+----------------------------+          +------------------+          +--------------------------------+
+           |                        |                           |                                       |
+           | -- [1. Fetch Session & Session JWTs] ------------->|                                       |
+           |                        |                           | -- [2. Authenticate & Create DID] --->|
+           |                        |                           | <-- [3. Return App/User Tokens] ------|
+           | <– [4. Mount Widget with Secure Tokens] -----------|                                       |
+           |                        |                                                                   |
+           |                        | ---- [5. Orchestrate Captures, Biometrics & ZK Proofs] ---------->|
+           |                        |                                                                   |
+           |                        |                           |<-- [6. Fire Webhook (Done)] ----------|
+```
+ 
 ---
 
 ## 2. Base Configuration
 
 ### Service URLs
-Depending on your target environment, initialize the base endpoints for the Hypersign ledger and credential routing services:
+Initialize the base endpoints for the Hypersign and credential routing services:
 
 ```javascript
 const KYC_BASE_URL = "[https://api.cavach.hypersign.id](https://api.cavach.hypersign.id)";
@@ -163,7 +163,7 @@ Instantiate a remote verification journey record state block.
 > ⏳ **Session Lifespan**: KYC state tracks a maximum validity window of **24 hours**.
 
 ```javascript
-const userKyc = {}; // Local session reference matrix mapping tracking table
+const userKycSessions = {}; // Local session reference matrix mapping tracking table
 
 async function initializeVerificationSession(kycAdminToken, email) {
     const response = await fetch(`${KYC_BASE_URL}/api/v2/session`, {
@@ -180,7 +180,7 @@ async function initializeVerificationSession(kycAdminToken, email) {
     const sessionId = result.data.sessionId;
 
     // Persist session locally with pending validation flag
-    userKyc[email] = {
+    userKycSessions[email] = {
         email,
         sessionId,
         isVerified: false
@@ -193,7 +193,7 @@ async function initializeVerificationSession(kycAdminToken, email) {
 
 ### STEP 4: Generate User-Specific Bearer Token
 
-Issues a down-scoped token restricting frontend interface actions strictly to biometric context windows matching the current session footprint.
+Issue highly restricted, temporary user token for the frontend widget that can only be used to complete the current user's specific KYC session.
 
 ```javascript
 async function generateKycUserSessionToken(claims, kycAdminToken, ssiAdminToken, sessionId) {
@@ -318,7 +318,7 @@ async function initKycUI(userEmail) {
 
 ### Step 2: Render & Orchestrate Verification Window
 
-Construct the dynamic query routing parameter structure to feed into the isolation container view.
+Build the Widget URL with the required security tokens and embede in your frontend
 
 ```javascript
 const WIDGET_BASE_URL = "[https://verify.hypersign.id](https://verify.hypersign.id)";
@@ -356,9 +356,6 @@ function handleWidgetTermination() {
 
 // Global interface processing event router loop hooks
 window.addEventListener('message', function (event) {
-    // Validate message origin for security best practices
-    if (event.origin !== WIDGET_BASE_URL) return;
-
     try {
         const payload = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         const { status, message, code } = payload;
@@ -406,12 +403,12 @@ function handleKycErrorStates(code) {
 
 ### Step 1: Expose Webhook Route
 
-To consume async confirmation messages emitted by the verification services engine, map a public endpoint inside your backend router.
+To consume async confirmation messages emitted by the Hypersign verification services engine, map a public endpoint inside your backend router.
 
 ```
-+------------------------+              +-------------------------+
-| Hypersign SaaS Network |              |  Your Application Host  |
-+------------------------+              +-------------------------+
++--------------------------------+              +-------------------------+
+| Hypersign Verification Service |              |  Your Application Host  |
++--------------------------------+              +-------------------------+
             |                                        |
             | --- [POST /api/v1/webhook/kyc] ------->|  (Extract idToken)
             |                                        |
@@ -465,20 +462,14 @@ app.post('/api/v1/webhook/kyc', async (req, res) => {
         const consentDataResult = await dataFetchResponse.json();
         
         if (consentDataResult && consentDataResult.success) {
-            const userCredentialPayload = consentDataResult.data.credential;
-            const isUserVerified = consentDataResult.data.credential.credentialSubject.verifed;
-
-            if (isUserVerified) {
-                // Look up user mapped matching current identity reference session footprint
-                const targetEmail = Object.keys(userKyc).find(email => userKyc[email].sessionId === sessionId);
+            const targetEmail = Object.keys(userKycSessions).find(email => userKycSessions[email].sessionId === sessionId);
                 
-                if (targetEmail) {
-                    // Update user profile status inside database state persistence
-                    userKyc[targetEmail].isVerified = true;
-                    userKyc[targetEmail].credentialId = userCredentialPayload.id;
-                    
-                    console.log(`Identity verified successfully for profile account path: ${targetEmail}`);
-                }
+            if (targetEmail) {
+                // Update user profile status inside database state persistence
+                userKycSessions[targetEmail].isVerified = true;
+                userKycSessions[targetEmail].credentialId = userCredentialPayload.id;
+                
+                console.log(`Identity verified successfully for profile account path: ${targetEmail}`);
             }
         }
     } catch (webhookProcessingError) {
