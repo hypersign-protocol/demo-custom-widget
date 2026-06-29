@@ -37,12 +37,10 @@ The integration follows a **Security-First Delegated Handshake** model:
 ### Service URLs
 Initialize the base endpoints for the Hypersign and credential routing services:
 
-```javascript
-const KYC_BASE_URL = "[https://api.cavach.hypersign.id](https://api.cavach.hypersign.id)";
-const SSI_BASE_URL = "[https://api.entity.hypersign.id](https://api.entity.hypersign.id)";
-const DEVELOPER_DASHBOARD_SERVICE_BASE_URL = "[https://api.entity.dashboard.hypersign.id](https://api.entity.dashboard.hypersign.id)";
 
-```
+- KYC_BASE_URL: [https://api.cavach.hypersign.id](https://api.cavach.hypersign.id);
+- SSI_BASE_URL: [https://api.entity.hypersign.id](https://api.entity.hypersign.id);
+- DEVELOPER_DASHBOARD_SERVICE_BASE_URL: [https://api.entity.dashboard.hypersign.id](https://api.entity.dashboard.hypersign.id);
 
 ### Prerequisite Setup
 
