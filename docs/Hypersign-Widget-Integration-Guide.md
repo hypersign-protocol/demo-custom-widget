@@ -50,8 +50,9 @@ Initialize the base endpoints for the Hypersign and credential routing services:
 
 ```javascript
 const X_ISSUER_DID = "did:hid:z6MkmEFC8N1AUsinEBNSszXoepHb45p38ZwidV58r1HPqCkU";
-const X_ISSUER_VERMETHOD_ID = "did:hid:z6MkmEFC8N1AUsinEBNSszXoepHb45p38ZwidV58r1HPqCkU#key-1";
+const X_ISSUER_VERMETHOD_ID = "did:hid:z6MkmEFC8N1AUsinEBNSszXoepHb45p38ZwidV58r1HPqCkU#key-1"; 
 ```
+> Note: Please make sure that `X_ISSUER_VERMETHOD_ID` is of type `Ed25519VerificationKey2020`
 
 You can keep these variables in your `.env`
 
