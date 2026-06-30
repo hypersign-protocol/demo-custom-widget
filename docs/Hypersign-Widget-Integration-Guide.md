@@ -473,9 +473,9 @@ app.post('/api/v1/webhook/kyc', async (req, res) => {
             }
         });
 
-        const consentDataResult = await dataFetchResponse.json();
+        const consentDataResponse = await dataFetchResponse.json();
         
-        if (consentDataResult && consentDataResult.success) {
+        if (consentDataResponse && consentDataResponse.success) {
             const targetEmail = Object.keys(userKycSessions).find(email => userKycSessions[email].sessionId === sessionId);
                 
             if (targetEmail) {
@@ -492,6 +492,82 @@ app.post('/api/v1/webhook/kyc', async (req, res) => {
 });
 
 ```
+Example consentDataResponse for `Proof Of Age` consent
+
+```
+{
+    "success": true,
+    "message": "success",
+    "data": {
+        "sessionId": "1b5b9cea-45bb-4a26-b76b-61e4d4a4c744",
+        "presentation": {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1"
+            ],
+            "type": [
+                "VerifiablePresentation"
+            ],
+            "verifiableCredential": [
+                {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://raw.githubusercontent.com/hypersign-protocol/hypersign-contexts/main/BJJSignature2021.jsonld",
+                        "https://schema.org"
+                    ],
+                    "id": "vc:hid:z6MkuZKDPydmCgv2K1ekV3m2weQ2G88SpibLE5HvN1Gm75uZ",
+                    "type": [
+                        "VerifiableCredential",
+                        "zkProofOfAge"
+                    ],
+                    "issuer": "did:hid:z3YsrhDHXqceBf2LUs4nJZF4JXdGJwQv8gwqrYqTNM5DJ",
+                    "issuanceDate": "2026-06-29T13:36:00Z",
+                    "expirationDate": "2027-12-10T18:30:00Z",
+                    "credentialSubject": {
+                        "proof": {
+                            "pi_a": "AUAAv/8bgOw32obJEwc0ECU..9wsgA",
+                            "pi_b": "AYAAf/8RFt9mNF7JJv0..VD2LPsy5acCoFsPXheyUqLf8LFaXIWWLApXGhVG8K+8wbWbUqT6QA==",
+                            "pi_c": "AUAAv/8TiZa9PEPIPwXeHB...hwZBTrua7MEkY7Yv",
+                            "protocol": "groth16",
+                            "curve": "bn128"
+                        },
+                        "publicSignals": [
+                            "BcEBAQAwCAKwS...NG6he3tV+Hw==",
+                            "MwQA",
+                            "MzIAAA==",
+                            "BcEBAQAwCAKwSn..K7vM7d0csbuqgHw==",
+                            "FcOBDcAwDAKwl4A..uTbiMrInt9ODR8gM=",
+                            "HcXBEQAwCAKwlV...Owo2PriSIaQ7WGz2gn4="
+                        ],
+                        "criteria": {
+                            "type": "Requirement",
+                            "attribute": "age",
+                            "operator": ">",
+                            "value": 20,
+                            "unit": "years"
+                        },
+                        "criteriaVerified": true,
+                        "id": "did:hid:z6MkjBaYmFA1qQPVrL22SUJipXUGeydJwtRC4fVWGUJFBE6m"
+                    },
+                    "credentialStatus": {
+                        "id": "https://api.atman.hypersign.id/hypersign-protocol/hidnode/ssi/credential/vc:hid:z6MkuZKDPydmCgv2K1ekV3m2weQ2G88SpibLE5HvN1Gm75uZ",
+                        "type": "HypersignCredentialStatus2023"
+                    },
+                    "proof": {
+                        "type": "BJJSignature2021",
+                        "created": "2026-06-29T13:37:42Z",
+                        "verificationMethod": "did:hid:z3YsrhDHXqceBf2LUs4nJZF4JXdGJwQv8gwqrYqTNM5DJ#key-1",
+                        "proofPurpose": "assertionMethod",
+                        "proofValue": "z5ofZ6iAgYn896u65...5QkBiKjMofm5"
+                    }
+                }
+            ],
+            "id": "vp:hid:z6MkngSE9cDhPbgBLS2XC8yw3EKSxxrn14WvsEmxQb5ES4Qe",
+            "holder": "did:hid:z6MkjBaYmFA1qQPVrL22SUJipXUGeydJwtRC4fVWGUJFBE6m"
+        }
+    }
+}
+```
+
 
 ---
 
