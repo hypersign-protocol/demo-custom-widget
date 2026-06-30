@@ -216,7 +216,7 @@ async function generateKycUserSessionToken(claims, kycAdminToken, ssiAdminToken,
         body: JSON.stringify({
             issuer: { verificationMethodId: X_ISSUER_VERMETHOD_ID, did: X_ISSUER_DID },
             audience: KYC_BASE_URL,
-            claims: claims,
+            claims: claims, 
             ttlSeconds: 3600
         })
     });
@@ -245,6 +245,8 @@ async function generateKycUserSessionToken(claims, kycAdminToken, ssiAdminToken,
 
 ```
 
+> **NOTE:** user's `claims` field MUST contain `did` and `email` fields
+
 ### STEP 5: Composite Orchestration Route
 
 Expose a single unified endpoint to provision the client onboarding setup details:
@@ -269,7 +271,7 @@ app.post('/api/v1/onboarding/setup', async (req, res) => {
 
         // 4. Derive isolated frontend action assertion token context 
         const userBearerToken = await generateKycUserSessionToken(
-            userClaims,
+            userClaims, // user's `claims` field MUST contain `did` and `email` fields
             kycAdminToken,
             ssiAdminToken,
             sessionId
