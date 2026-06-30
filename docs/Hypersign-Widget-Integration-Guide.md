@@ -332,7 +332,7 @@ async function initKycUI(userEmail) {
 Build the Widget URL with the required security tokens and embede in your frontend
 
 ```javascript
-const WIDGET_BASE_URL = "[https://verify.hypersign.id](https://verify.hypersign.id)";
+const WIDGET_BASE_URL = "https://verify.hypersign.id";
 let widgetCloseTimer = null;
 
 function buildWidgetUrl() {
@@ -408,6 +408,8 @@ function handleKycErrorStates(code) {
 
 ```
 
+> Widget URL Format:
+> `https://verify.hypersign.id?kycAccessToken=<kycAccessToken>&ssiAccessToken=<ssiAccessToken>&sessionId=<sessionId>&kycUserAccessToken=<kycUserAccessToken>`
 ---
 
 ## 5. Webhook Integration
