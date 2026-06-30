@@ -130,9 +130,9 @@ async function registerUserDid(ssiAdminToken, email) {
     const user = users[email];
     if (user && user.did) {
         return {
-            email,
+            email: user.email,
             did: user.did,
-            verificationMethodId: `${user.did}#key-1`
+            verificationMethodId: user.verificationMethodId
         };
     }
 
