@@ -130,7 +130,7 @@ async function registerUserDid(ssiAdminToken, email) {
     const user = users[email];
     if (user && user.did) {
         return {
-            email: user.email,
+            email,
             did: user.did,
             verificationMethodId: user.verificationMethodId
         };
@@ -155,7 +155,7 @@ async function registerUserDid(ssiAdminToken, email) {
     );
 
     // 3. Persist state changes inside application storage boundaries
-    users[email] = { did: result.did };
+    users[email] = { did: result.did, verificationMethodId: method.id };
     
     return {
         email,
