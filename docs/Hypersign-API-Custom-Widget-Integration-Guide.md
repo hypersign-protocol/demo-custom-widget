@@ -1,4 +1,4 @@
-# 📄 Hypersign KYC API Integration Guide
+# 📄 Hypersign ID API Integration Guide
 
 This document is for developers building a custom UI to integrate with **Hypersign KYC and SSI APIs**. By using these APIs directly instead of the pre-built widget, you maintain total control over your UI/UX while leveraging decentralized identity (DID) infrastructure.
 

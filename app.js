@@ -3,7 +3,7 @@ const path = require('path');
 const { getCachedAdminTokens, generateKycUserSessionToken } = require('./tokenService')
 const { initializeVerificationSession } = require('./idService')
 const { registerUserDid } = require('./ssiService')
-const { X_ISSUER_VERMETHOD_ID, X_ISSUER_DID } = require('./config')
+const { X_ISSUER_VERMETHOD_ID, X_ISSUER_DID, WIDGET_URL } = require('./config')
 
 const app = express();
 const PORT = 3007;
@@ -52,7 +52,7 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         const userData = {
             name: name,             // mandatory
             email: email,           // mandatory
-            userDid: userDidMetadata.did,
+            did: userDidMetadata.did,
         };
 
         // 6. Generate the final User-specific Bearer Token
@@ -68,6 +68,8 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
             kycAdminToken,
             ssiAdminToken,
             userBearerToken,
+            kycUserAccessToken: userBearerToken,
+            widgetUrl: WIDGET_URL,
             issuerDid: X_ISSUER_DID,
             issuerVerificationMethodId: X_ISSUER_VERMETHOD_ID,
             sessionId,
@@ -84,6 +86,11 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
 // Explicit route for index.html (optional but clear)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+// api to get webhook data
+app.post('/webhook', (req, res) => {
+    console.log(req.body)
+    res.status(200).send();
 });
 
 app.listen(PORT, () => {
