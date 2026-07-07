@@ -81,14 +81,27 @@ async function initializeVerificationSession
 Every user requires a DID to sign their final verification results.
 
 ```js
-async function registerUserDid(ssiAdminToken) {
+const users = {}
+async function registerUserDid(ssiAdminToken, email) {
+    
+    const user = users[email]
+
+    // check if user already exists
+    if(user) {
+        return  {
+            did: user.did,
+            verificationMethodId: user.did + "#key1"
+        }
+    }
+
+    // if not proceed to create a new DID
     const res = await fetch(`${SSI_BASE_URL}/api/v1/did/create`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${ssiAdminToken}`
         },
-        body: JSON.stringify({ namespace: '' })
+        body: JSON.stringify({ namespace: ''})
     });
     const result = await res.json();
     
@@ -96,6 +109,7 @@ async function registerUserDid(ssiAdminToken) {
     const method = result.metaData.didDocument.verificationMethod
                    .find(m => m.type === 'Ed25519VerificationKey2020');
 
+    users[email] = { did: result.did }
     return {
         did: result.did,
         verificationMethodId: method.id
@@ -152,15 +166,17 @@ app.get('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         // 2. Initialize the KYC Verification Session
         const sessionId = await initializeVerificationSession(kycAdminToken);
 
-        // 3. Register a new User DID
-        const userDidMetadata = await registerUserDid(ssiAdminToken);
-
-        // 4. Prepare User Claims for the DID JWT
-        const userData = {
+        let userData = {
             name: "John",
             email: "john@gmail.com", // Mandatory
-            userDid: userDidMetadata.did, // Mandatory
+            userDid: "", 
         };
+
+        // 3. Register a new User DID
+        const userDidMetadata = await registerUserDid(ssiAdminToken, userData.email);
+
+        // 4. Prepare User Claims for the DID JWT
+        userData.userDid = userDidMetadata.did
 
         // 5. Generate the final User-specific Bearer Token
         const userBearerToken = await generateKycUserSessionToken(
@@ -217,6 +233,9 @@ async function initKycUI() {
 ### Step 2: Document OCR Extraction
 After capturing the ID document via the camera, send the Base64 image for extraction.
 
+### Option A: Passport Extraction
+For passports, only the front image (the information page) is required in the request payload.
+
 ```js
 async function processDocumentExtraction(base64Image) {
     const response = await fetch(`${KYC_BASE_URL}/api/v2/documents/extract`, {
@@ -243,6 +262,33 @@ async function processDocumentExtraction(base64Image) {
 Allowed values:
 - `PASSPORT`
 - `GOVT_ID`
+
+### Option B: Government ID Extraction
+
+For Government IDs, the API expects both front and back images, along with a specific ISO country code.
+
+```js
+async function processDocumentExtraction(base64Image) {
+    const response = await fetch(`${KYC_BASE_URL}/api/v2/documents/extract`, {
+        method: 'POST',
+        headers: {
+            'x-kyc-access-token': state.tokens.kycAdmin,
+            'Authorization': `Bearer ${state.tokens.userBearer}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            documentFront: base64ImageFront,
+            documentBack: base64ImageBack,
+            sessionId: state.session.id,
+            documentType: "GOVT_ID",
+            countryCode: "IND" // ISO Alpha-3 code (e.g., IND for India)
+        })
+    });
+
+    const result = await response.json();
+    state.session.extractionToken = result.data.extractionToken;
+}
+```
 
 ### Step 3: Identity Verification (Face Match)
 Matches the selfie against the extracted document data.
