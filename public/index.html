@@ -152,8 +152,8 @@
                     <div id="step-document-type" class="step-card flow-step shadow-sm p-4 hidden">
                         <div class="mb-3">
                             <h2 class="h5 mb-1">Verification flow</h2>
-                            <p class="text-secondary mb-0">Choose the custom verification flow or launch the hosted
-                                Hypersign widget.</p>
+                            <p class="text-secondary mb-0">Choose a verification flow: Custom Widget, Hypersign
+                                Widget, or Business Verification.</p>
                         </div>
 
                         <ul class="nav nav-tabs" role="tablist" aria-label="Verification type">
@@ -164,6 +164,10 @@
                             <li class="nav-item" role="presentation">
                                 <button id="hypersign-tab" class="nav-link" type="button" role="tab"
                                     onclick="showVerifierTab('hypersign')">Hypersign Widget</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button id="kyb-tab" class="nav-link" type="button" role="tab"
+                                    onclick="showVerifierTab('kyb')">Business Verification</button>
                             </li>
                         </ul>
 
@@ -211,6 +215,11 @@
                             </div>
                             <pre id="widget-result" class="result-box mt-3 hidden"></pre>
                         </div>
+
+                        <div id="kyb-panel" class="tab-panel p-0 hidden">
+                            <iframe id="kyb-widget-frame" class="border-0 w-100" style="height: 1400px;"
+                                title="Hypersign Business Verification"></iframe>
+                        </div>
                     </div>
 
                     <div id="camera-container" class="step-card flow-step shadow-sm p-4 hidden">
@@ -232,7 +241,7 @@
                             Verification</button>
                     </div>
 
-                    <section class="step-card shadow-sm p-4">
+                    <section id="kyc-session-output" class="step-card shadow-sm p-4">
                         <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
                             <div>
                                 <h2 class="h5 mb-1">API response log</h2>
@@ -272,6 +281,8 @@
         const KYC_BASE_URL = "https://api.cavach.hypersign.id";
         const SSI_BASE_URL = "https://api.entity.hypersign.id";
         let widgetUrl = "https://verify.hypersign.id";
+        // const KYC_BASE_URL='http://localhost:3009'
+        // const SSI_BASE_URL='http://localhost:3008'
 
         /** * Application State Object 
          * Centralizes all tokens and IDs generated during the flow.
@@ -279,6 +290,7 @@
         const state = {
             tokens: {
                 kycAdmin: "",
+                kybAdmin: "",
                 ssiAdmin: "",
                 userBearer: ""
             },
@@ -321,6 +333,7 @@
         const hypersignRestartBtn = document.getElementById("hypersign-restart-btn");
         const hypersignIframeWrap = document.getElementById("hypersign-iframe-wrap");
         const hypersignWidgetFrame = document.getElementById("hypersign-widget-frame");
+        const kybWidgetFrame = document.getElementById("kyb-widget-frame");
         const apiResponseLog = document.getElementById("api-response-log");
         const kycTokenRow = document.getElementById("kyc-token-row");
         const kycUserAccessTokenInput = document.getElementById("kyc-user-access-token");
@@ -388,6 +401,7 @@
             }
 
             state.tokens.kycAdmin = data.kycAdminToken;
+            state.tokens.kybAdmin = data.kybAdminToken;
             state.tokens.ssiAdmin = data.ssiAdminToken;
             state.tokens.userBearer = data.kycUserAccessToken || data.userBearerToken;
             widgetUrl = normalizeWidgetUrl(data.widgetUrl || "");
@@ -397,6 +411,15 @@
             state.user.did = data.userDid;
             state.user.methodId = data.userVerificationMethodId;
             resetHypersignWidgetControls();
+            kybWidgetFrame.removeAttribute("src");
+            sessionStorage.setItem("hypersignKybSession", JSON.stringify({
+                userToken: state.tokens.userBearer,
+                kycToken: state.tokens.kycAdmin,
+                kybToken: state.tokens.kybAdmin,
+                ssiToken: state.tokens.ssiAdmin,
+                name,
+                email
+            }));
             logApiResponse(data);
             updateWidgetUrlField();
 
@@ -414,11 +437,20 @@
 
         function showVerifierTab(tabName) {
             const isCustom = tabName === "custom";
+            const isHypersign = tabName === "hypersign";
+            const isKyb = tabName === "kyb";
 
             document.getElementById("custom-tab").classList.toggle("active", isCustom);
-            document.getElementById("hypersign-tab").classList.toggle("active", !isCustom);
+            document.getElementById("hypersign-tab").classList.toggle("active", isHypersign);
+            document.getElementById("kyb-tab").classList.toggle("active", isKyb);
             document.getElementById("custom-panel").classList.toggle("hidden", !isCustom);
-            document.getElementById("hypersign-panel").classList.toggle("hidden", isCustom);
+            document.getElementById("hypersign-panel").classList.toggle("hidden", !isHypersign);
+            document.getElementById("kyb-panel").classList.toggle("hidden", !isKyb);
+            document.getElementById("kyc-session-output").classList.toggle("hidden", isKyb);
+
+            if (isKyb && !kybWidgetFrame.hasAttribute("src")) {
+                kybWidgetFrame.src = "/kyb.html?embedded=true";
+            }
         }
 
         async function openHypersignWidget() {
@@ -634,6 +666,7 @@
 
         function clearSessionState() {
             state.tokens.kycAdmin = "";
+            state.tokens.kybAdmin = "";
             state.tokens.ssiAdmin = "";
             state.tokens.userBearer = "";
             state.issuer.did = "";
@@ -648,6 +681,8 @@
             userInputState.name = "";
             userInputState.email = "";
             widgetWindow = null;
+            sessionStorage.removeItem("hypersignKybSession");
+            kybWidgetFrame.removeAttribute("src");
             currentStep = "init";
         }
 

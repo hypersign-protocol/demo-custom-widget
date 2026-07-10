@@ -40,7 +40,7 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         }
 
         // 2. Prepare Administrative Access Tokens (using file-based cache)
-        const { kycAdminToken, ssiAdminToken } = await getCachedAdminTokens();
+        const { kycAdminToken, kybAdminToken, ssiAdminToken } = await getCachedAdminTokens();
 
         // 3. Initialize the KYC Verification Session
         const sessionId = await initializeVerificationSession(kycAdminToken);
@@ -66,6 +66,7 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         // 7. Return comprehensive credentials to the client
         res.json({
             kycAdminToken,
+            kybAdminToken,
             ssiAdminToken,
             userBearerToken,
             kycUserAccessToken: userBearerToken,
