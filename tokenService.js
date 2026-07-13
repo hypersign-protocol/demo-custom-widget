@@ -13,9 +13,11 @@ const EXPIRY_BUFFER_MS = 60000; // 1-minute safety buffer
  * @returns {Promise<string>} - A promise that resolves to the raw access token string.
  * @throws {Error} - Throws an error if the network request fails or the API returns an error structure.
  */
-async function fetchAdminAccessToken(apiSecret, serviceType) {
+async function fetchAdminAccessToken(apiSecret, serviceType, options = {}) {
     const AUTH_ENDPOINT = "/api/v1/app/oauth";
-    const url = `${DEVELOPER_DASHBOARD_SERVICE_BASE_URL}${AUTH_ENDPOINT}?grant_type=${serviceType}`;
+    const query = new URLSearchParams({ grant_type: serviceType });
+    if (options.businessId) query.set('businessId', options.businessId);
+    const url = `${DEVELOPER_DASHBOARD_SERVICE_BASE_URL}${AUTH_ENDPOINT}?${query}`;
 
     try {
         const response = await fetch(url, {
@@ -46,6 +48,16 @@ async function fetchAdminAccessToken(apiSecret, serviceType) {
         console.error(`[Admin Auth Error]: ${error.message}`);
         throw error;
     }
+}
+
+// Business-scoped KYC tokens are intentionally not cached: the business ID is
+// part of the OAuth grant.
+async function fetchBusinessKycAccessToken(businessId) {
+    if (!businessId || typeof businessId !== 'string') {
+        throw new Error('Missing required business ID.');
+    }
+
+    return fetchAdminAccessToken(KYC_API_SECRET, 'access_service_kyc', { businessId });
 }
 
 
@@ -158,5 +170,6 @@ async function generateKycUserSessionToken(claims, kycAdminToken, ssiAdminToken,
 
 module.exports = {
     getCachedAdminTokens,
-    generateKycUserSessionToken
+    generateKycUserSessionToken,
+    fetchBusinessKycAccessToken
 }

@@ -1,49 +1,81 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hypersign Business Verification</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #f4f7fb; color: #162033; }
-    .card { border-color: #dce5ef; }
-    .result { background:#0f172a; color:#dbeafe; border-radius:6px; padding:12px; max-height:300px; overflow:auto; font: 12px ui-monospace, monospace; white-space:pre-wrap; word-break:break-word; }
-    .hidden { display:none; }
+    body {
+      background: #f4f7fb;
+      color: #162033;
+    }
+
+    .card {
+      border-color: #dce5ef;
+    }
+
+    .result {
+      background: #0f172a;
+      color: #dbeafe;
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 300px;
+      overflow: auto;
+      font: 12px ui-monospace, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
   <main class="container py-4 py-md-5">
     <div id="kyb-page-heading" class="d-flex justify-content-between align-items-start gap-3 mb-4">
-      <div><h1 class="h3 mb-1">Business verification</h1><p class="text-secondary mb-0">Upload company documents, register company details, and add UBOs.</p></div>
+      <div>
+        <h1 class="h3 mb-1">Business verification</h1>
+        <p class="text-secondary mb-0">Upload company documents, register company details, and add UBOs.</p>
+      </div>
       <a class="btn btn-outline-secondary" href="/">KYC verification</a>
     </div>
 
-    <div id="kyb-intro" class="alert alert-info">Start a session first. The resulting KYC user token is used as the Bearer authorization for every KYB API request.</div>
+    <div id="kyb-intro" class="alert alert-info">Start a session first. The resulting KYC user token is used as the
+      Bearer authorization for every KYB API request.</div>
 
-    <section id="session-card" class="card shadow-sm mb-4"><div class="card-body">
-      <h2 class="h5">1. Start KYB session</h2>
-      <form id="session-form" class="row g-3">
-        <div class="col-md-5"><label class="form-label" for="name">Name</label><input id="name" class="form-control" required autocomplete="name"></div>
-        <div class="col-md-5"><label class="form-label" for="email">Email</label><input id="email" type="email" class="form-control" required autocomplete="email"></div>
-        <div class="col-md-2 d-flex align-items-end"><button id="session-button" class="btn btn-primary w-100">Start session</button></div>
-      </form>
-      <p id="session-status" class="small text-secondary mb-0 mt-3">No active session.</p>
-    </div></section>
+    <section id="session-card" class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="h5">1. Start KYB session</h2>
+        <form id="session-form" class="row g-3">
+          <div class="col-md-5"><label class="form-label" for="name">Name</label><input id="name" class="form-control"
+              required autocomplete="name"></div>
+          <div class="col-md-5"><label class="form-label" for="email">Email</label><input id="email" type="email"
+              class="form-control" required autocomplete="email"></div>
+          <div class="col-md-2 d-flex align-items-end"><button id="session-button" class="btn btn-primary w-100">Start
+              session</button></div>
+        </form>
+        <p id="session-status" class="small text-secondary mb-0 mt-3">No active session.</p>
+      </div>
+    </section>
 
     <div id="kyb-flow" class="hidden">
       <section id="existing-company-card" class="card shadow-sm mb-4">
         <div class="card-body">
           <h2 class="h5">Open an existing company</h2>
-          <p class="text-secondary small">If the company and its documents were already created, load it here to continue
-            directly with UBOs.</p>
+          <p class="text-secondary small">If the company and its documents were already created, load it here to fetch
+            its UBO list and KYC links. UBO additions are disabled for an existing company.</p>
           <form id="get-company-form" class="row g-2">
             <div class="col-md-8"><label class="form-label" for="existing-company-id">Existing company ID</label><input
                 id="existing-company-id" class="form-control" placeholder="Paste an existing company ID"></div>
-            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-outline-primary w-100">Open existing
+            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-outline-primary w-100">Get existing
                 company</button></div>
             <div class="col-12">
-              <p id="get-company-status" class="small text-secondary mb-0">This does not require uploading documents again.
+              <p id="get-company-status" class="small text-secondary mb-0">This does not require uploading documents
+                again.
               </p>
             </div>
           </form>
@@ -62,76 +94,139 @@
 
       <section id="document-upload-card" class="card shadow-sm mb-4">
         <div class="card-body">
-        <h2 class="h5">2. Upload business documents</h2>
-        <p class="text-secondary small">Upload both required company documents before creating the company verification.</p>
-        <div id="required-document-status" class="alert alert-warning small py-2" role="status">
-          Required: Certificate of Incorporation and Proof of Address.
+          <h2 class="h5">2. Upload business documents</h2>
+          <p class="text-secondary small">Upload both required company documents before creating the company
+            verification.</p>
+          <div id="required-document-status" class="alert alert-warning small py-2" role="status">
+            Required: Certificate of Incorporation and Proof of Address.
+          </div>
+          <form id="document-form" class="row g-3" enctype="multipart/form-data">
+            <div class="col-md-4"><label class="form-label" for="entity-type">Entity type</label><select
+                id="entity-type" class="form-select" required>
+                <option value="Company">Company</option>
+                <option value="Individual">Individual</option>
+              </select></div>
+            <div class="col-md-4"><label class="form-label" for="document-type">Document type</label><select
+                id="document-type" class="form-select" required>
+                <option value="CertificateOfIncorporation">Certificate of Incorporation</option>
+                <option value="ProofOfAddress">Proof of Address</option>
+                <option value="PowerOfAttorney">Power of Attorney</option>
+              </select></div>
+            <div class="col-md-4"><label class="form-label" for="document-file">File</label><input id="document-file"
+                class="form-control" type="file" required></div>
+            <div class="col-12"><button class="btn btn-primary">Upload selected document</button></div>
+          </form>
+          <div id="documents-empty" class="text-secondary small mt-3">No documents uploaded.</div>
+          <ul id="document-list" class="list-group list-group-flush mt-2"></ul>
         </div>
-        <form id="document-form" class="row g-3" enctype="multipart/form-data">
-          <div class="col-md-4"><label class="form-label" for="entity-type">Entity type</label><select id="entity-type" class="form-select" required><option value="Company">Company</option><option value="Individual">Individual</option></select></div>
-          <div class="col-md-4"><label class="form-label" for="document-type">Document type</label><select id="document-type" class="form-select" required><option value="CertificateOfIncorporation">Certificate of Incorporation</option><option value="ProofOfAddress">Proof of Address</option><option value="PowerOfAttorney">Power of Attorney</option></select></div>
-          <div class="col-md-4"><label class="form-label" for="document-file">File</label><input id="document-file" class="form-control" type="file" required></div>
-          <div class="col-12"><button class="btn btn-primary">Upload selected document</button></div>
-        </form>
-        <div id="documents-empty" class="text-secondary small mt-3">No documents uploaded.</div>
-        <ul id="document-list" class="list-group list-group-flush mt-2"></ul>
-      </div></section>
+      </section>
 
       <section id="company-create-card" class="card shadow-sm mb-4">
         <div class="card-body">
-        <h2 class="h5">3. Company details</h2>
-        <p class="text-secondary small">Document response data is retained below. Review or complete these details before submitting the company.</p>
-        <form id="company-form" class="row g-3">
-          <div class="col-md-6"><label class="form-label" for="company-name">Company name</label><input id="company-name" class="form-control" required></div>
-          <div class="col-md-6"><label class="form-label" for="domain">Domain</label><input id="domain" class="form-control" placeholder="company.in" required></div>
-          <div class="col-md-4"><label class="form-label" for="region">Region</label><input id="region" class="form-control" value="Asia Pacific" required></div>
-          <div class="col-md-4"><label class="form-label" for="registration-country">Country of registration</label><input id="registration-country" class="form-control" value="IN" maxlength="2" required></div>
-          <div class="col-md-4"><label class="form-label" for="registration-number">Registration number</label><input id="registration-number" class="form-control" required></div>
-          <div class="col-md-4"><label class="form-label" for="registration-type">Registration number type</label><input id="registration-type" class="form-control" value="CIN" required></div>
-          <div class="col-12"><h3 class="h6 mt-2">Registered address</h3></div>
-          <div class="col-md-6"><label class="form-label" for="street">Street</label><input id="street" class="form-control" required></div>
-          <div class="col-md-3"><label class="form-label" for="province">Province / state</label><input id="province" class="form-control" required></div>
-          <div class="col-md-3"><label class="form-label" for="city">City</label><input id="city" class="form-control" required></div>
-          <div class="col-md-6"><label class="form-label" for="postal-code">Postal code</label><input id="postal-code" class="form-control" required></div>
-          <div class="col-md-6"><label class="form-label" for="address-country">Address country</label><input id="address-country" class="form-control" value="IN" maxlength="2" required></div>
-          <div class="col-12"><button class="btn btn-primary">Create company verification</button></div>
-        </form>
-        <p id="company-status" class="small text-secondary mt-3 mb-0"></p>
-      </div></section>
+          <h2 class="h5">3. Company details</h2>
+          <p class="text-secondary small">Document response data is retained below. Review or complete these details
+            before submitting the company.</p>
+          <form id="company-form" class="row g-3">
+            <div class="col-md-6"><label class="form-label" for="company-name">Company name</label><input
+                id="company-name" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label" for="domain">Domain</label><input id="domain"
+                class="form-control" placeholder="company.in" required></div>
+            <div class="col-md-4"><label class="form-label" for="region">Region</label><input id="region"
+                class="form-control" value="Asia Pacific" required></div>
+            <div class="col-md-4"><label class="form-label" for="registration-country">Country of
+                registration</label><input id="registration-country" class="form-control" value="IN" maxlength="2"
+                required></div>
+            <div class="col-md-4"><label class="form-label" for="registration-number">Registration number</label><input
+                id="registration-number" class="form-control" required></div>
+            <div class="col-md-4"><label class="form-label" for="registration-type">Registration number
+                type</label><input id="registration-type" class="form-control" value="CIN" required></div>
+            <div class="col-12">
+              <h3 class="h6 mt-2">Registered address</h3>
+            </div>
+            <div class="col-md-6"><label class="form-label" for="street">Street</label><input id="street"
+                class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label" for="province">Province / state</label><input id="province"
+                class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label" for="city">City</label><input id="city" class="form-control"
+                required></div>
+            <div class="col-md-6"><label class="form-label" for="postal-code">Postal code</label><input id="postal-code"
+                class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label" for="address-country">Address country</label><input
+                id="address-country" class="form-control" value="IN" maxlength="2" required></div>
+            <div class="col-12"><button class="btn btn-primary">Create company verification</button></div>
+          </form>
+          <p id="company-status" class="small text-secondary mt-3 mb-0"></p>
+        </div>
+      </section>
 
-      <section id="ubo-section" class="card shadow-sm mb-4 hidden"><div class="card-body">
-        <h2 class="h5">4. Ultimate beneficial owners / executives</h2>
-        <p class="text-secondary small">You can add multiple entries. A Representative must have a Power of Attorney document uploaded first.</p>
-        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap"><p id="ubo-status" class="small text-success mb-0">Company verification is ready. Add one UBO at a time; the form stays available for additional UBOs.</p><button id="refresh-ubos" type="button" class="btn btn-outline-secondary btn-sm">Refresh UBO list</button></div>
-        <form id="ubo-form" class="row g-3">
-          <div class="col-md-4"><label class="form-label" for="ubo-name">Name</label><input id="ubo-name" class="form-control" required></div>
-          <div class="col-md-4"><label class="form-label" for="ubo-email">Email</label><input id="ubo-email" type="email" class="form-control" required></div>
-          <div class="col-md-4"><label class="form-label" for="designation">Designation</label><input id="designation" class="form-control" required></div>
-          <div class="col-md-6"><label class="form-label" for="ubo-type">Type</label><select id="ubo-type" class="form-select"><option value="Shareholder">Shareholder</option><option value="Representative">Representative</option></select></div>
-          <div class="col-md-6"><label class="form-label" for="percentage-share">Percentage share</label><input id="percentage-share" type="number" min="0" max="100" step="0.01" class="form-control" required></div>
-          <div class="col-12"><button class="btn btn-primary">Add UBO / executive</button></div>
-        </form>
-        <div id="representative-poa" class="alert alert-warning mt-3 hidden">
-          <strong>Power of Attorney required.</strong> Upload it before adding this Representative.
-          <form id="poa-form" class="row g-2 mt-1">
-            <div class="col-md-8"><input id="poa-file" type="file" class="form-control" required></div>
-            <div class="col-md-4"><button class="btn btn-outline-primary w-100">Upload Power of Attorney</button></div>
+      <section id="ubo-section" class="card shadow-sm mb-4 hidden">
+        <div class="card-body">
+          <h2 class="h5">4. Ultimate beneficial owners / executives</h2>
+          <p class="text-secondary small">You can add multiple entries. A Representative must have a Power of Attorney
+            document uploaded first.</p>
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <p id="ubo-status" class="small text-success mb-0">Company verification is ready. Add one UBO at a time; the
+              form stays available for additional UBOs.</p><button id="refresh-ubos" type="button"
+              class="btn btn-outline-secondary btn-sm">Refresh UBO list</button>
+          </div>
+          <p id="ubo-addition-disabled" class="alert alert-info small mt-3 mb-0 hidden">This is an existing company, so
+            its UBOs are read-only here. The list below is fetched from the company record.</p>
+          <form id="ubo-form" class="row g-3">
+            <div class="col-md-4"><label class="form-label" for="ubo-name">Name</label><input id="ubo-name"
+                class="form-control" required></div>
+            <div class="col-md-4"><label class="form-label" for="ubo-email">Email</label><input id="ubo-email"
+                type="email" class="form-control" required></div>
+            <div class="col-md-4"><label class="form-label" for="designation">Designation</label><input id="designation"
+                class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label" for="ubo-type">Type</label><select id="ubo-type"
+                class="form-select">
+                <option value="Shareholder">Shareholder</option>
+                <option value="Representative">Representative</option>
+              </select></div>
+            <div class="col-md-6"><label class="form-label" for="percentage-share">Percentage share</label><input
+                id="percentage-share" type="number" min="0" max="100" step="0.01" class="form-control" required></div>
+            <div class="col-12"><button class="btn btn-primary">Add UBO / executive</button></div>
+          </form>
+          <div id="representative-poa" class="alert alert-warning mt-3 hidden">
+            <strong>Power of Attorney required.</strong> Upload it before adding this Representative.
+            <form id="poa-form" class="row g-2 mt-1">
+              <div class="col-md-8"><input id="poa-file" type="file" class="form-control" required></div>
+              <div class="col-md-4"><button class="btn btn-outline-primary w-100">Upload Power of Attorney</button>
+              </div>
+            </form>
+          </div>
+          <ul id="ubo-list" class="list-group list-group-flush mt-3"></ul>
+        </div>
+      </section>
+
+      <section class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h5">Compliance details</h2>
+          <form id="compliance-form" class="row g-3">
+            <div class="col-md-8"><label for="compliance-company-id" class="form-label">Company ID
+                (entityId)</label><input id="compliance-company-id" class="form-control" required></div>
+            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-outline-primary w-100">Get
+                compliance</button></div>
           </form>
         </div>
-        <ul id="ubo-list" class="list-group list-group-flush mt-3"></ul>
-      </div></section>
-
-      <section class="card shadow-sm"><div class="card-body">
-        <h2 class="h5">Compliance details</h2>
-        <form id="compliance-form" class="row g-3"><div class="col-md-8"><label for="compliance-company-id" class="form-label">Company ID (entityId)</label><input id="compliance-company-id" class="form-control" required></div><div class="col-md-4 d-flex align-items-end"><button class="btn btn-outline-primary w-100">Get compliance</button></div></form>
-      </div></section>
+      </section>
     </div>
-    <section class="card shadow-sm mt-4"><div class="card-body"><div class="d-flex justify-content-between"><h2 class="h5">API response log</h2><button id="copy-log" type="button" class="btn btn-sm btn-outline-secondary">Copy JSON</button></div><pre id="log" class="result mb-0">Start a KYB session to begin.</pre></div></section>
+    <section class="card shadow-sm mt-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <h2 class="h5">API response log</h2><button id="copy-log" type="button"
+            class="btn btn-sm btn-outline-secondary">Copy JSON</button>
+        </div>
+        <pre id="log" class="result mb-0">Start a KYB session to begin.</pre>
+      </div>
+    </section>
   </main>
   <script>
-      const API_BASE = 'https://api.cavach.hypersign.id';
+    // const API_BASE = 'https://api.cavach.hypersign.id';
+    const API_BASE = 'http://localhost:3009';
 
-    const state = { userToken: '', kycToken: '', kybToken: '', ssiToken: '', companyId: '', documents: [], ubos: [] };
+
+    const state = { userToken: '', kycToken: '', kybToken: '', ssiToken: '', widgetUrl: '', sessionId: '', companyId: '', businessKycToken: '', readOnlyUbos: false, documents: [], ubos: [] };
     const $ = id => document.getElementById(id);
     function log(data) { $('log').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2); }
     function headers(json = true) { const h = { Authorization: `Bearer ${state.userToken}`, 'x-kyb-access-token': state.kybToken, 'x-ssi-access-token': state.ssiToken }; if (json) h['Content-Type'] = 'application/json'; return h; }
@@ -155,22 +250,22 @@
       } catch (error) { console.warn('Could not read shared KYB session.', error); }
     }
 
-    $('session-form').addEventListener('submit', async e => { e.preventDefault(); const button = $('session-button'); button.disabled = true; button.textContent = 'Starting…'; try { const res = await fetch('/get-required-tokens-and-session-for-a-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:$('name').value.trim(), email:$('email').value.trim() }) }); const data = await res.json(); log(data); if (!res.ok) throw new Error(data.error || 'Could not start session'); state.userToken = data.kycUserAccessToken || data.userBearerToken; state.kycToken = data.kycAdminToken; state.kybToken = data.kybAdminToken; state.ssiToken = data.ssiAdminToken; if (!state.kybToken || !state.kycToken) throw new Error('Required KYC or KYB admin token was not returned. Check service configuration.'); $('session-status').textContent = 'Session ready. KYB requests will now include the required authorization headers.'; $('kyb-flow').classList.remove('hidden'); } catch (err) { $('session-status').textContent = err.message; } finally { button.disabled = false; button.textContent = 'Start session'; } });
+    $('session-form').addEventListener('submit', async e => { e.preventDefault(); const button = $('session-button'); button.disabled = true; button.textContent = 'Starting…'; try { const res = await fetch('/get-required-tokens-and-session-for-a-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('name').value.trim(), email: $('email').value.trim() }) }); const data = await res.json(); log(data); if (!res.ok) throw new Error(data.error || 'Could not start session'); state.userToken = data.kycUserAccessToken || data.userBearerToken; state.kycToken = data.kycAdminToken; state.kybToken = data.kybAdminToken; state.ssiToken = data.ssiAdminToken; state.widgetUrl = data.widgetUrl || ''; state.sessionId = data.sessionId || ''; if (!state.kybToken || !state.kycToken) throw new Error('Required KYC or KYB admin token was not returned. Check service configuration.'); $('session-status').textContent = 'Session ready. KYB requests will now include the required authorization headers.'; $('kyb-flow').classList.remove('hidden'); } catch (err) { $('session-status').textContent = err.message; } finally { button.disabled = false; button.textContent = 'Start session'; } });
 
-      async function uploadDocument(file, entityType, documentType) {
-        if (!file) throw new Error('Choose a file to upload.');
-        const form = new FormData();
-        form.append('file', file);
-        form.append('entityType', entityType);
-        form.append('documentType', documentType);
-        const result = await api('/api/v1/document/upload', { method: 'POST', headers: headers(false), body: form });
-        const document = result.data || result;
-        if (!document.id) throw new Error('Upload response did not include a document ID.');
-        state.documents.push({ id: document.id, fileName: document.fileName || file.name, entityType, documentType, response: document });
-        renderDocuments();
-      }
+    async function uploadDocument(file, entityType, documentType) {
+      if (!file) throw new Error('Choose a file to upload.');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('entityType', entityType);
+      form.append('documentType', documentType);
+      const result = await api('/api/v1/document/upload', { method: 'POST', headers: headers(false), body: form });
+      const document = result.data || result;
+      if (!document.id) throw new Error('Upload response did not include a document ID.');
+      state.documents.push({ id: document.id, fileName: document.fileName || file.name, entityType, documentType, response: document });
+      renderDocuments();
+    }
 
-      $('document-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); await uploadDocument($('document-file').files[0], $('entity-type').value, $('document-type').value); e.target.reset(); if (!hasDocumentType('CertificateOfIncorporation')) $('document-type').value = 'CertificateOfIncorporation'; else if (!hasDocumentType('ProofOfAddress')) $('document-type').value = 'ProofOfAddress'; } catch (err) { log(`Upload error: ${err.message}`); } });
+    $('document-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); await uploadDocument($('document-file').files[0], $('entity-type').value, $('document-type').value); e.target.reset(); if (!hasDocumentType('CertificateOfIncorporation')) $('document-type').value = 'CertificateOfIncorporation'; else if (!hasDocumentType('ProofOfAddress')) $('document-type').value = 'ProofOfAddress'; } catch (err) { log(`Upload error: ${err.message}`); } });
     function hasDocumentType(type) { return state.documents.some(d => d.documentType === type); }
     function renderDocuments() {
       const hasIncorporation = hasDocumentType('CertificateOfIncorporation');
@@ -183,94 +278,99 @@
     }
     function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value || ''; return el.innerHTML; }
 
-      function normalizeId(value) {
-        if (typeof value === 'string' && value.trim()) return value.trim();
-        if (!value || typeof value !== 'object') return '';
-        return [value.idString, value.$oid, value.id, value.value, value.toString?.()].find(candidate => typeof candidate === 'string' && candidate.trim() && candidate !== '[object Object]') || '';
-      }
-
-    function resolveCompanyId(company) {
-          const candidates = [company?.id, company?.idString, company?._id, company?.companyId, company?.entityId, company?.verification?.id, company?.verification?.idString, company?.verification?._id, company?.verification?.companyId, company?.company?.id, company?.company?.idString, company?.company?._id, company?.company?.companyId];
-          return candidates.map(normalizeId).find(Boolean) || '';
-        }
-
-        function populateCompanyForm(company) {
-          const source = company?.company || company?.verification || company;
-          const address = source?.address || source?.registeredAddress || {};
-          const values = { 'company-name': source?.name, domain: source?.domain, region: source?.region, 'registration-country': source?.countryOfRegistration, 'registration-number': source?.registrationNumber, 'registration-type': source?.registrationNumberType, street: address?.street, province: address?.province, city: address?.city, 'postal-code': address?.postalCode, 'address-country': address?.country };
-          Object.entries(values).forEach(([field, value]) => { if (value !== undefined && value !== null) $(field).value = value; });
-        }
-
-        function renderLoadedCompany(company) {
-          const source = company?.company || company?.verification || company;
-          const address = source?.address || source?.registeredAddress || {};
-          const fields = [
-            ['Company name', source?.name], ['Company ID', resolveCompanyId(source)], ['Status', source?.status], ['Domain', source?.domain],
-            ['Region', source?.region], ['Country of registration', source?.countryOfRegistration], ['Registration number', source?.registrationNumber],
-            ['Registration type', source?.registrationNumberType], ['Street', address?.street], ['City', address?.city], ['Province / state', address?.province],
-            ['Postal code', address?.postalCode], ['Address country', address?.country]
-          ];
-          $('loaded-company-details').innerHTML = fields.filter(([, value]) => value !== undefined && value !== null && value !== '').map(([label, value]) => `<div class="col-md-4"><label class="form-label small text-secondary mb-1">${escapeHtml(label)}</label><input class="form-control" value="${escapeHtml(String(value))}" readonly></div>`).join('');
-          const documents = Array.isArray(source?.documents) ? source.documents : [];
-          $('loaded-company-documents').innerHTML = documents.length ? documents.map(document => `<li class="list-group-item px-0"><strong>${escapeHtml(document.documentType || 'Document')}</strong> — ${escapeHtml(document.fileName || '')}<span class="text-secondary"> (${escapeHtml(document.verification?.status || 'Saved')})</span><br><code>${escapeHtml(resolveCompanyId(document) || document.id || '')}</code></li>`).join('') : '<li class="list-group-item px-0 text-secondary">No document details were returned.</li>';
-          $('loaded-company-card').classList.remove('hidden');
-        }
-
-        function restoreCompanyDocuments(company) {
-          const source = company?.company || company?.verification || company;
-          const documents = Array.isArray(source?.documents) ? source.documents : [];
-          state.documents = documents.map(document => ({ id: resolveCompanyId(document) || document.id, fileName: document.fileName, entityType: 'Company', documentType: document.documentType, response: document })).filter(document => document.id);
-        }
-
-        function activateCompany(company, companyId, options = {}) {
-          state.companyId = companyId;
-          populateCompanyForm(company);
-          $('company-status').textContent = `Company ready: ${companyId}`;
-          $('existing-company-id').value = companyId;
-          $('compliance-company-id').value = companyId;
-          $('document-upload-card').classList.add('hidden');
-          $('company-create-card').classList.add('hidden');
-          if (options.existing) {
-            restoreCompanyDocuments(company);
-            renderLoadedCompany(company);
-          }
-          $('ubo-section').classList.remove('hidden');
-          (options.existing ? $('loaded-company-card') : $('ubo-section')).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    function normalizeId(value) {
+      if (typeof value === 'string' && value.trim()) return value.trim();
+      if (!value || typeof value !== 'object') return '';
+      return [value.idString, value.$oid, value.id, value.value, value.toString?.()].find(candidate => typeof candidate === 'string' && candidate.trim() && candidate !== '[object Object]') || '';
     }
 
-      function renderUboList() {
-        $('ubo-list').innerHTML = state.ubos.length ? state.ubos.map(ubo => `<li class="list-group-item px-0"><strong>${escapeHtml(ubo.name || 'Unnamed')}</strong>${ubo.type ? ` — ${escapeHtml(ubo.type)}` : ''}${ubo.percentageShare !== undefined ? `, ${escapeHtml(String(ubo.percentageShare))}%` : ''}${ubo.designation ? ` (${escapeHtml(ubo.designation)})` : ''}${ubo.email ? `<br><span class="text-secondary small">${escapeHtml(ubo.email)}</span>` : ''}</li>`).join('') : '<li class="list-group-item px-0 text-secondary">No UBOs or executives found for this company.</li>';
+    function resolveCompanyId(company) {
+      const candidates = [company?.id, company?.idString, company?._id, company?.companyId, company?.entityId, company?.verification?.id, company?.verification?.idString, company?.verification?._id, company?.verification?.companyId, company?.company?.id, company?.company?.idString, company?.company?._id, company?.company?.companyId];
+      return candidates.map(normalizeId).find(Boolean) || '';
+    }
+
+    function populateCompanyForm(company) {
+      const source = company?.company || company?.verification || company;
+      const address = source?.address || source?.registeredAddress || {};
+      const values = { 'company-name': source?.name, domain: source?.domain, region: source?.region, 'registration-country': source?.countryOfRegistration, 'registration-number': source?.registrationNumber, 'registration-type': source?.registrationNumberType, street: address?.street, province: address?.province, city: address?.city, 'postal-code': address?.postalCode, 'address-country': address?.country };
+      Object.entries(values).forEach(([field, value]) => { if (value !== undefined && value !== null) $(field).value = value; });
+    }
+
+    function renderLoadedCompany(company) {
+      const source = company?.company || company?.verification || company;
+      const address = source?.address || source?.registeredAddress || {};
+      const fields = [
+        ['Company name', source?.name], ['Company ID', resolveCompanyId(source)], ['Status', source?.status], ['Domain', source?.domain],
+        ['Region', source?.region], ['Country of registration', source?.countryOfRegistration], ['Registration number', source?.registrationNumber],
+        ['Registration type', source?.registrationNumberType], ['Street', address?.street], ['City', address?.city], ['Province / state', address?.province],
+        ['Postal code', address?.postalCode], ['Address country', address?.country]
+      ];
+      $('loaded-company-details').innerHTML = fields.filter(([, value]) => value !== undefined && value !== null && value !== '').map(([label, value]) => `<div class="col-md-4"><label class="form-label small text-secondary mb-1">${escapeHtml(label)}</label><input class="form-control" value="${escapeHtml(String(value))}" readonly></div>`).join('');
+      const documents = Array.isArray(source?.documents) ? source.documents : [];
+      $('loaded-company-documents').innerHTML = documents.length ? documents.map(document => `<li class="list-group-item px-0"><strong>${escapeHtml(document.documentType || 'Document')}</strong> — ${escapeHtml(document.fileName || '')}<span class="text-secondary"> (${escapeHtml(document.verification?.status || 'Saved')})</span><br><code>${escapeHtml(resolveCompanyId(document) || document.id || '')}</code></li>`).join('') : '<li class="list-group-item px-0 text-secondary">No document details were returned.</li>';
+      $('loaded-company-card').classList.remove('hidden');
+    }
+
+    function restoreCompanyDocuments(company) {
+      const source = company?.company || company?.verification || company;
+      const documents = Array.isArray(source?.documents) ? source.documents : [];
+      state.documents = documents.map(document => ({ id: resolveCompanyId(document) || document.id, fileName: document.fileName, entityType: 'Company', documentType: document.documentType, response: document })).filter(document => document.id);
+    }
+
+    function activateCompany(company, companyId, options = {}) {
+      state.companyId = companyId;
+      state.readOnlyUbos = Boolean(options.existing);
+      populateCompanyForm(company);
+      $('company-status').textContent = `Company ready: ${companyId}`;
+      $('existing-company-id').value = companyId;
+      $('compliance-company-id').value = companyId;
+      $('document-upload-card').classList.add('hidden');
+      $('company-create-card').classList.add('hidden');
+      if (options.existing) {
+        restoreCompanyDocuments(company);
+        renderLoadedCompany(company);
       }
+      $('ubo-section').classList.remove('hidden');
+      $('ubo-form').classList.toggle('hidden', state.readOnlyUbos);
+      $('representative-poa').classList.add('hidden');
+      $('ubo-addition-disabled').classList.toggle('hidden', !state.readOnlyUbos);
+      (options.existing ? $('loaded-company-card') : $('ubo-section')).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
-      async function loadCompanyUbos() {
-        if (!state.companyId) throw new Error('Open or create a company first.');
-        if (!state.kycToken) throw new Error('KYC admin token is unavailable. Start a new verification session.');
-        $('refresh-ubos').disabled = true;
-        $('refresh-ubos').textContent = 'Loading…';
-        try {
-          const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(state.companyId)}/company-executives`, { headers: uboFetchHeaders() });
-          const data = result?.data ?? result;
-          state.ubos = Array.isArray(data) ? data : (data?.companyExecutives || data?.executives || data?.shareholders || []);
-          renderUboList();
-          $('ubo-status').textContent = `${state.ubos.length} UBO/executive record(s) loaded for this company.`;
-        } finally {
-          $('refresh-ubos').disabled = false;
-          $('refresh-ubos').textContent = 'Refresh UBO list';
-        }
+    function renderUboList() {
+      $('ubo-list').innerHTML = state.ubos.length ? state.ubos.map(ubo => `<li class="list-group-item px-0"><strong>${escapeHtml(ubo.name || 'Unnamed')}</strong>${ubo.type ? ` — ${escapeHtml(ubo.type)}` : ''}${ubo.percentageShare !== undefined ? `, ${escapeHtml(String(ubo.percentageShare))}%` : ''}${ubo.designation ? ` (${escapeHtml(ubo.designation)})` : ''}${ubo.email ? `<br><span class="text-secondary small">${escapeHtml(ubo.email)}</span>` : ''}${kycUrl ? `<br><a class="btn btn-sm btn-outline-primary mt-2" href="${escapeHtml(kycUrl)}" target="_blank" rel="noopener">Start KYC for this UBO</a>` : '<br><span class="text-warning small">KYC link is unavailable because the company token or widget session could not be created.</span>'}</li>`).join('') : '<li class="list-group-item px-0 text-secondary">No UBOs or executives found for this company.</li>';
+    }
+
+    async function loadCompanyUbos() {
+      if (!state.companyId) throw new Error('Open or create a company first.');
+      if (!state.kycToken) throw new Error('KYC admin token is unavailable. Start a new verification session.');
+      $('refresh-ubos').disabled = true;
+      $('refresh-ubos').textContent = 'Loading…';
+      try {
+        const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(state.companyId)}/company-executives`, { headers: uboFetchHeaders() });
+        const data = result?.data ?? result;
+        state.ubos = Array.isArray(data) ? data : (data?.companyExecutives || data?.executives || data?.shareholders || []);
+        renderUboList();
+        $('ubo-status').textContent = `${state.ubos.length} UBO/executive record(s) loaded for this company.`;
+      } finally {
+        $('refresh-ubos').disabled = false;
+        $('refresh-ubos').textContent = 'Refresh UBO list';
       }
+    }
 
-      $('company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const requiredTypes = ['CertificateOfIncorporation', 'ProofOfAddress']; const missing = requiredTypes.filter(type => !hasDocumentType(type)); if (missing.length) throw new Error(`Upload the required document(s): ${missing.join(', ')}.`); const v = id => $(id).value.trim(); const body = { name: v('company-name'), domain: v('domain'), region: v('region'), countryOfRegistration: v('registration-country').toUpperCase(), registrationNumber: v('registration-number'), registrationNumberType: v('registration-type'), address: { street: v('street'), province: v('province'), postalCode: v('postal-code'), city: v('city'), country: v('address-country').toUpperCase() }, documentIds: state.documents.map(d => d.id) }; const result = await api('/api/v1/e-kyb/verification/company', { method: 'POST', headers: headers(), body: JSON.stringify(body) }); const company = result.data || result; const companyId = resolveCompanyId(company); if (!companyId) throw new Error('Company was created, but its ID was not found in the response. Check the API response log and add the ID mapping in resolveCompanyId.'); activateCompany(company, companyId); } catch (err) { $('company-status').textContent = err.message; } });
+    $('company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const requiredTypes = ['CertificateOfIncorporation', 'ProofOfAddress']; const missing = requiredTypes.filter(type => !hasDocumentType(type)); if (missing.length) throw new Error(`Upload the required document(s): ${missing.join(', ')}.`); const v = id => $(id).value.trim(); const body = { name: v('company-name'), domain: v('domain'), region: v('region'), countryOfRegistration: v('registration-country').toUpperCase(), registrationNumber: v('registration-number'), registrationNumberType: v('registration-type'), address: { street: v('street'), province: v('province'), postalCode: v('postal-code'), city: v('city'), country: v('address-country').toUpperCase() }, documentIds: state.documents.map(d => d.id) }; const result = await api('/api/v1/e-kyb/verification/company', { method: 'POST', headers: headers(), body: JSON.stringify(body) }); const company = result.data || result; const companyId = resolveCompanyId(company); if (!companyId) throw new Error('Company was created, but its ID was not found in the response. Check the API response log and add the ID mapping in resolveCompanyId.'); activateCompany(company, companyId); await prepareBusinessKycToken(); $('ubo-status').textContent = 'Company KYC link is ready. Add UBOs, then use their KYC links below.'; renderUboList(); } catch (err) { $('company-status').textContent = err.message; } });
 
-      $('get-company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const companyId = $('existing-company-id').value.trim(); if (!companyId) throw new Error('Enter the existing company ID.'); $('get-company-status').textContent = 'Loading company…'; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(companyId)}`, { headers: headers(false) }); const company = result.data || result; activateCompany(company, resolveCompanyId(company) || companyId, { existing: true }); await loadCompanyUbos(); $('get-company-status').textContent = 'Company and its UBOs were loaded. You can add additional UBOs below.'; } catch (err) { $('get-company-status').textContent = `Could not load company: ${err.message}`; } });
+    $('get-company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const companyId = $('existing-company-id').value.trim(); if (!companyId) throw new Error('Enter the existing company ID.'); $('get-company-status').textContent = 'Loading company…'; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(companyId)}`, { headers: headers(false) }); const company = result.data || result; activateCompany(company, resolveCompanyId(company) || companyId, { existing: true }); let tokenError = ''; try { await prepareBusinessKycToken(); } catch (error) { tokenError = error.message; } await loadCompanyUbos(); $('get-company-status').textContent = tokenError ? `Company and UBOs were loaded, but the KYC links are unavailable: ${tokenError}` : 'Company and its UBOs were loaded. Use an UBO KYC link below to continue verification.'; } catch (err) { $('get-company-status').textContent = `Could not load company: ${err.message}`; } });
 
-      $('ubo-type').addEventListener('change', () => $('representative-poa').classList.toggle('hidden', $('ubo-type').value !== 'Representative' || hasDocumentType('PowerOfAttorney')));
-      $('poa-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); await uploadDocument($('poa-file').files[0], 'Individual', 'PowerOfAttorney'); e.target.reset(); $('representative-poa').classList.add('hidden'); $('ubo-status').textContent = 'Power of Attorney uploaded. You can now add the Representative.'; } catch (err) { log(`Power of Attorney upload error: ${err.message}`); } });
-      $('refresh-ubos').addEventListener('click', async () => { try { requireSession(); await loadCompanyUbos(); } catch (err) { log(`UBO list error: ${err.message}`); } });
-      $('ubo-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); if (!state.companyId) throw new Error('Create or open the company first.'); const type = $('ubo-type').value; if (type === 'Representative' && !hasDocumentType('PowerOfAttorney')) throw new Error('Upload a Power of Attorney document before adding a Representative.'); const body = { name: $('ubo-name').value.trim(), email: $('ubo-email').value.trim(), designation: $('designation').value.trim(), type, percentageShare: Number($('percentage-share').value) }; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(state.companyId)}/company-executives`, { method: 'POST', headers: headers(), body: JSON.stringify(body) }); state.ubos.push({ ...body, response: result.data || result }); renderUboList(); e.target.reset(); } catch (err) { log(`UBO error: ${err.message}`); } });
+    $('ubo-type').addEventListener('change', () => $('representative-poa').classList.toggle('hidden', $('ubo-type').value !== 'Representative' || hasDocumentType('PowerOfAttorney')));
+    $('poa-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); await uploadDocument($('poa-file').files[0], 'Individual', 'PowerOfAttorney'); e.target.reset(); $('representative-poa').classList.add('hidden'); $('ubo-status').textContent = 'Power of Attorney uploaded. You can now add the Representative.'; } catch (err) { log(`Power of Attorney upload error: ${err.message}`); } });
+    $('refresh-ubos').addEventListener('click', async () => { try { requireSession(); await loadCompanyUbos(); } catch (err) { log(`UBO list error: ${err.message}`); } });
+    $('ubo-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); if (state.readOnlyUbos) throw new Error('UBOs cannot be added to an existing company from this screen.'); if (!state.companyId) throw new Error('Create or open the company first.'); const type = $('ubo-type').value; if (type === 'Representative' && !hasDocumentType('PowerOfAttorney')) throw new Error('Upload a Power of Attorney document before adding a Representative.'); const body = { name: $('ubo-name').value.trim(), email: $('ubo-email').value.trim(), designation: $('designation').value.trim(), type, percentageShare: Number($('percentage-share').value) }; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(state.companyId)}/company-executives`, { method: 'POST', headers: headers(), body: JSON.stringify(body) }); state.ubos.push({ ...body, response: result.data || result }); renderUboList(); e.target.reset(); } catch (err) { log(`UBO error: ${err.message}`); } });
 
-      $('compliance-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const entityId = $('compliance-company-id').value.trim(); if (!entityId) throw new Error('Enter a company ID.'); await api(`/api/v1/compliance?entityId=${encodeURIComponent(entityId)}`, { headers: headers(false) }); } catch (err) { log(`Compliance error: ${err.error.details}`); } });
+    $('compliance-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const entityId = $('compliance-company-id').value.trim(); if (!entityId) throw new Error('Enter a company ID.'); await api(`/api/v1/compliance?entityId=${encodeURIComponent(entityId)}`, { headers: headers(false) }); } catch (err) { log(`Compliance error: ${err.error.details}`); } });
     $('copy-log').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('log').textContent); } catch { window.getSelection().selectAllChildren($('log')); } });
     useSharedKybSession();
   </script>
 </body>
+
 </html>
