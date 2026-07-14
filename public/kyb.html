@@ -49,7 +49,7 @@
 
     <section id="session-card" class="card shadow-sm mb-4">
       <div class="card-body">
-        <h2 class="h5">1. Start KYB session</h2>
+        <h2 class="h5">Start KYB session</h2>
         <form id="session-form" class="row g-3">
           <div class="col-md-5"><label class="form-label" for="name">Name</label><input id="name" class="form-control"
               required autocomplete="name"></div>
@@ -67,7 +67,7 @@
         <div class="card-body">
           <h2 class="h5">Open an existing company</h2>
           <p class="text-secondary small">If the company and its documents were already created, load it here to fetch
-            its UBO list and KYC links. UBO additions are disabled for an existing company.</p>
+            its UBO list. UBO additions are disabled for an existing company.</p>
           <form id="get-company-form" class="row g-2">
             <div class="col-md-8"><label class="form-label" for="existing-company-id">Existing company ID</label><input
                 id="existing-company-id" class="form-control" placeholder="Paste an existing company ID"></div>
@@ -184,7 +184,7 @@
                 <option value="Representative">Representative</option>
               </select></div>
             <div class="col-md-6"><label class="form-label" for="percentage-share">Percentage share</label><input
-                id="percentage-share" type="number" min="0" max="100" step="0.01" class="form-control" required></div>
+                id="percentage-share" type="number" min="0" max="100" step="0.01" class="form-control"></div>
             <div class="col-12"><button class="btn btn-primary">Add UBO / executive</button></div>
           </form>
           <div id="representative-poa" class="alert alert-warning mt-3 hidden">
@@ -194,6 +194,12 @@
               <div class="col-md-4"><button class="btn btn-outline-primary w-100">Upload Power of Attorney</button>
               </div>
             </form>
+          </div>
+          <div id="representative-update-note" class="alert alert-info mt-3 hidden">
+            If you are both a Shareholder and the company's Representative, add yourself as a <strong>Shareholder</strong> (no
+            Power of Attorney needed) — the backend links roles internally. Use the <strong>Representative</strong> option only to
+            update an existing representative record (upload a Power of Attorney first); the form will send a `PATCH` to attach
+            the POA.
           </div>
           <ul id="ubo-list" class="list-group list-group-flush mt-3"></ul>
         </div>
@@ -222,8 +228,8 @@
     </section>
   </main>
   <script>
-    // const API_BASE = 'https://api.cavach.hypersign.id';
-    const API_BASE = 'http://localhost:3009';
+    
+   const API_BASE = 'https://api.cavach.hypersign.id';
 
 
     const state = { userToken: '', kycToken: '', kybToken: '', ssiToken: '', widgetUrl: '', sessionId: '', companyId: '', businessKycToken: '', readOnlyUbos: false, documents: [], ubos: [] };
@@ -338,7 +344,7 @@
     }
 
     function renderUboList() {
-      $('ubo-list').innerHTML = state.ubos.length ? state.ubos.map(ubo => `<li class="list-group-item px-0"><strong>${escapeHtml(ubo.name || 'Unnamed')}</strong>${ubo.type ? ` — ${escapeHtml(ubo.type)}` : ''}${ubo.percentageShare !== undefined ? `, ${escapeHtml(String(ubo.percentageShare))}%` : ''}${ubo.designation ? ` (${escapeHtml(ubo.designation)})` : ''}${ubo.email ? `<br><span class="text-secondary small">${escapeHtml(ubo.email)}</span>` : ''}${kycUrl ? `<br><a class="btn btn-sm btn-outline-primary mt-2" href="${escapeHtml(kycUrl)}" target="_blank" rel="noopener">Start KYC for this UBO</a>` : '<br><span class="text-warning small">KYC link is unavailable because the company token or widget session could not be created.</span>'}</li>`).join('') : '<li class="list-group-item px-0 text-secondary">No UBOs or executives found for this company.</li>';
+      $('ubo-list').innerHTML = state.ubos.length ? state.ubos.map(ubo => `<li class="list-group-item px-0"><strong>${escapeHtml(ubo.name || 'Unnamed')}</strong>${ubo.type ? ` — ${escapeHtml(ubo.type)}` : ''}${ubo.percentageShare !== undefined ? `, ${escapeHtml(String(ubo.percentageShare))}%` : ''}${ubo.designation ? ` (${escapeHtml(ubo.designation)})` : ''}${ubo.email ? `<br><span class="text-secondary small">${escapeHtml(ubo.email)}</span>` : ''}</li>`).join('') : '<li class="list-group-item px-0 text-secondary">No UBOs or executives found for this company.</li>';
     }
 
     async function loadCompanyUbos() {
@@ -358,14 +364,75 @@
       }
     }
 
-    $('company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const requiredTypes = ['CertificateOfIncorporation', 'ProofOfAddress']; const missing = requiredTypes.filter(type => !hasDocumentType(type)); if (missing.length) throw new Error(`Upload the required document(s): ${missing.join(', ')}.`); const v = id => $(id).value.trim(); const body = { name: v('company-name'), domain: v('domain'), region: v('region'), countryOfRegistration: v('registration-country').toUpperCase(), registrationNumber: v('registration-number'), registrationNumberType: v('registration-type'), address: { street: v('street'), province: v('province'), postalCode: v('postal-code'), city: v('city'), country: v('address-country').toUpperCase() }, documentIds: state.documents.map(d => d.id) }; const result = await api('/api/v1/e-kyb/verification/company', { method: 'POST', headers: headers(), body: JSON.stringify(body) }); const company = result.data || result; const companyId = resolveCompanyId(company); if (!companyId) throw new Error('Company was created, but its ID was not found in the response. Check the API response log and add the ID mapping in resolveCompanyId.'); activateCompany(company, companyId); await prepareBusinessKycToken(); $('ubo-status').textContent = 'Company KYC link is ready. Add UBOs, then use their KYC links below.'; renderUboList(); } catch (err) { $('company-status').textContent = err.message; } });
+    $('company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const requiredTypes = ['CertificateOfIncorporation', 'ProofOfAddress']; const missing = requiredTypes.filter(type => !hasDocumentType(type)); if (missing.length) throw new Error(`Upload the required document(s): ${missing.join(', ')}.`); const v = id => $(id).value.trim(); const body = { name: v('company-name'), domain: v('domain'), region: v('region'), countryOfRegistration: v('registration-country').toUpperCase(), registrationNumber: v('registration-number'), registrationNumberType: v('registration-type'), address: { street: v('street'), province: v('province'), postalCode: v('postal-code'), city: v('city'), country: v('address-country').toUpperCase() }, documentIds: state.documents.map(d => d.id) }; const result = await api('/api/v1/e-kyb/verification/company', { method: 'POST', headers: headers(), body: JSON.stringify(body) }); const company = result.data || result; const companyId = resolveCompanyId(company); if (!companyId) throw new Error('Company was created, but its ID was not found in the response. Check the API response log and add the ID mapping in resolveCompanyId.'); activateCompany(company, companyId); renderUboList(); } catch (err) { $('company-status').textContent = err.message; } });
 
-    $('get-company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const companyId = $('existing-company-id').value.trim(); if (!companyId) throw new Error('Enter the existing company ID.'); $('get-company-status').textContent = 'Loading company…'; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(companyId)}`, { headers: headers(false) }); const company = result.data || result; activateCompany(company, resolveCompanyId(company) || companyId, { existing: true }); let tokenError = ''; try { await prepareBusinessKycToken(); } catch (error) { tokenError = error.message; } await loadCompanyUbos(); $('get-company-status').textContent = tokenError ? `Company and UBOs were loaded, but the KYC links are unavailable: ${tokenError}` : 'Company and its UBOs were loaded. Use an UBO KYC link below to continue verification.'; } catch (err) { $('get-company-status').textContent = `Could not load company: ${err.message}`; } });
+    $('get-company-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const companyId = $('existing-company-id').value.trim(); if (!companyId) throw new Error('Enter the existing company ID.'); $('get-company-status').textContent = 'Loading company…'; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(companyId)}`, { headers: headers(false) }); const company = result.data || result; activateCompany(company, resolveCompanyId(company) || companyId, { existing: true }); await loadCompanyUbos(); $('get-company-status').textContent = 'Company and its UBOs were loaded.'; } catch (err) { $('get-company-status').textContent = `Could not load company: ${err.message}`; } });
 
-    $('ubo-type').addEventListener('change', () => $('representative-poa').classList.toggle('hidden', $('ubo-type').value !== 'Representative' || hasDocumentType('PowerOfAttorney')));
-    $('poa-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); await uploadDocument($('poa-file').files[0], 'Individual', 'PowerOfAttorney'); e.target.reset(); $('representative-poa').classList.add('hidden'); $('ubo-status').textContent = 'Power of Attorney uploaded. You can now add the Representative.'; } catch (err) { log(`Power of Attorney upload error: ${err.message}`); } });
-    $('refresh-ubos').addEventListener('click', async () => { try { requireSession(); await loadCompanyUbos(); } catch (err) { log(`UBO list error: ${err.message}`); } });
-    $('ubo-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); if (state.readOnlyUbos) throw new Error('UBOs cannot be added to an existing company from this screen.'); if (!state.companyId) throw new Error('Create or open the company first.'); const type = $('ubo-type').value; if (type === 'Representative' && !hasDocumentType('PowerOfAttorney')) throw new Error('Upload a Power of Attorney document before adding a Representative.'); const body = { name: $('ubo-name').value.trim(), email: $('ubo-email').value.trim(), designation: $('designation').value.trim(), type, percentageShare: Number($('percentage-share').value) }; const result = await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(state.companyId)}/company-executives`, { method: 'POST', headers: headers(), body: JSON.stringify(body) }); state.ubos.push({ ...body, response: result.data || result }); renderUboList(); e.target.reset(); } catch (err) { log(`UBO error: ${err.message}`); } });
+      $('ubo-type').addEventListener('change', () => {
+        const isRepresentative = $('ubo-type').value === 'Representative';
+        $('representative-poa').classList.toggle('hidden', !isRepresentative);
+        $('representative-update-note').classList.toggle('hidden', isRepresentative);
+      });
+      $('poa-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+          requireSession();
+          await uploadDocument($('poa-file').files[0], 'Individual', 'PowerOfAttorney');
+          e.target.reset();
+          $('representative-poa').classList.add('hidden');
+          $('ubo-status').textContent = 'Power of Attorney uploaded. You can now add the Representative.';
+        } catch (err) {
+          log(`Power of Attorney upload error: ${err.message}`);
+        }
+      });
+      $('refresh-ubos').addEventListener('click', async () => {
+        try {
+          requireSession();
+          await loadCompanyUbos();
+        } catch (err) {
+          log(`UBO list error: ${err.message}`);
+        }
+      });
+      $('ubo-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+          requireSession();
+          if (state.readOnlyUbos) throw new Error('UBOs cannot be added to an existing company from this screen.');
+          if (!state.companyId) throw new Error('Create or open the company first.');
+
+          const type = $('ubo-type').value;
+          const body = {
+            name: $('ubo-name').value.trim(),
+            email: $('ubo-email').value.trim(),
+            designation: $('designation').value.trim(),
+            type
+          };
+
+          const percentage = $('percentage-share').value.trim();
+          if (percentage !== '' && type !== 'Representative') {
+            body.percentageShare = Number(percentage);
+          }
+
+          const isRepresentative = type === 'Representative';
+          if (isRepresentative) {
+            const poaDocument = state.documents.find(d => d.documentType === 'PowerOfAttorney');
+            if (!poaDocument) throw new Error('Upload a Power of Attorney document before adding a Representative.');
+            body.documentIds = [poaDocument.id];
+          }
+
+          await api(`/api/v1/e-kyb/verification/company/${encodeURIComponent(state.companyId)}/company-executives`, {
+            method: isRepresentative ? 'PATCH' : 'POST',
+            headers: headers(),
+            body: JSON.stringify(body)
+          });
+
+          await loadCompanyUbos();
+          $('ubo-status').textContent = isRepresentative ? 'Representative updated successfully.' : 'UBO/executive added successfully.';
+          $('ubo-form').reset();
+        } catch (err) {
+          log(`UBO submission error: ${err.message}`);
+        }
+      });
 
     $('compliance-form').addEventListener('submit', async e => { e.preventDefault(); try { requireSession(); const entityId = $('compliance-company-id').value.trim(); if (!entityId) throw new Error('Enter a company ID.'); await api(`/api/v1/compliance?entityId=${encodeURIComponent(entityId)}`, { headers: headers(false) }); } catch (err) { log(`Compliance error: ${err.error.details}`); } });
     $('copy-log').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('log').textContent); } catch { window.getSelection().selectAllChildren($('log')); } });
