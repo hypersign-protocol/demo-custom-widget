@@ -1,6 +1,6 @@
 # 📄 Hypersign KYB API Integration Guide
 
-This document describes the **Hypersign KYB Business Verification** integration using APIs. It focuses on the KYB-specific token handshake, backend orchestration, and KYB API request/response contracts.
+This document describes how to integrate **Hypersign KYB Business Verification** through its APIs. It focuses on the KYB-specific token handshake, backend orchestration, and KYB API request/response contracts.
 
 ---
 
@@ -23,7 +23,7 @@ Configure these endpoints in `config.js` or environment variables:
 ```js
 const KYC_BASE_URL = "https://api.cavach.hypersign.id";
 const SSI_BASE_URL = "https://api.entity.hypersign.id";
-const DEVELOPER_DASHBOARD_SERVICE_BASE_URL = "https://api.entity.dashboard.hypersign.id"
+const DEVELOPER_DASHBOARD_SERVICE_BASE_URL = "https://api.entity.dashboard.hypersign.id";
 ```
 
 ### Required backend secrets
@@ -177,17 +177,34 @@ Upload both the Certificate of Incorporation and Proof of Address documents, and
 
 ```http
 POST /api/v1/document/upload
- Authorization: Bearer <userBearerToken>
- x-kyb-access-token: <kybAdminToken>
- x-ssi-access-token: <ssiAdminToken>
+Authorization: Bearer <userBearerToken>
+x-kyb-access-token: <kybAdminToken>
+x-ssi-access-token: <ssiAdminToken>
 Content-Type: multipart/form-data
 ```
 
-Form fields:
+#### Form Fields
 
-* `file` — document binary
-* `entityType` — `Company` 
-* `documentType` — `CertificateOfIncorporation` or `ProofOfAddress`
+| Field | Type | Description | Supported values / format |
+|---|---|---|---|
+| `file` | File (binary) | The business document to upload. | PDF, JPG, JPEG, PNG, or GIF. |
+| `entityType` | String (enum) | The entity to which the document relates. | `Company` or `Individual`; see [supported entity types](#supported-entity-types). |
+| `documentType` | String (enum) | Classifies the document so it can be used in the appropriate KYB step. | `CertificateOfIncorporation`, `ProofOfAddress`, or `PowerOfAttorney`; see [supported-document-types](#supported-document-types). |
+
+##### Supported entity types
+
+| Value | Description | Use with |
+|---|---|---|
+| `Company` | A legal business entity being verified. | `CertificateOfIncorporation` and `ProofOfAddress` when creating a company verification. |
+| `Individual` | A natural person associated with the company. | `PowerOfAttorney` for a company representative. |
+
+##### Supported document types
+
+| Value | Description | Entity type |
+|---|---|---|
+| `CertificateOfIncorporation` | Official document that proves the company was legally incorporated or registered. | `Company` |
+| `ProofOfAddress` | Document that substantiates the company's registered or operating address. | `Company` |
+| `PowerOfAttorney` | Document authorizing an individual to act on the company's behalf. It is required when adding or updating a `Representative`. | `Individual` |
 
 #### Response
 
@@ -206,19 +223,33 @@ Form fields:
 }
 ```
 
+#### Verification status meanings
+
+The company `status` field supports the following values:
+
+| Status | Meaning |
+|---|---|
+| `Submitted` | Default status when a company is added. KYB verification has not yet started. |
+| `InProgress` | KYB verification has started. |
+| `Approved` | Company KYB verification completed successfully and was approved by the customer. |
+| `Rejected` | Company KYB verification completed and was rejected by the customer. |
+| `Completed` | Company KYB verification is finished, regardless of whether the outcome was successful or unsuccessful. |
+
+> `Success` and `Failed` in the compliance response describe the outcome of an individual compliance check. They are not company verification status values.
+
 ### 4.2 Create a company verification
 
 #### Request
 
 ```http
 POST /api/v1/e-kyb/verification/company
- Authorization: Bearer <userBearerToken>
- x-kyb-access-token: <kybAdminToken>
- x-ssi-access-token: <ssiAdminToken>
+Authorization: Bearer <userBearerToken>
+x-kyb-access-token: <kybAdminToken>
+x-ssi-access-token: <ssiAdminToken>
 Content-Type: application/json
 ```
 
-Body:
+Request body:
 
 ```json
 {
@@ -238,6 +269,24 @@ Body:
   "documentIds": ["<doc-id-1>", "<doc-id-2>"]
 }
 ```
+
+#### Request body fields
+
+| Field name | Type | Description | Supported values / format |
+|---|---|---|---|
+| `name` | String | Legal or trading name of the company. | Free text. |
+| `domain` | String | Company's internet domain. | Domain name, for example `acme.example`. |
+| `region` | String | Geographic region in which the company operates or is registered. | Free text, for example `Asia Pacific`. |
+| `countryOfRegistration` | String | Country where the company is registered. | ISO 3166-1 alpha-2 country code, for example `IN`. |
+| `registrationNumber` | String | Company registration number assigned by the relevant authority. | Use the format issued by the registering authority. |
+| `registrationNumberType` | String | Name of the registration-number scheme. | Jurisdiction-specific value; for example, `CIN` for an Indian Corporate Identification Number. |
+| `address` | Object | Registered business address. | Object containing the address fields below. |
+| `address.street` | String | Street address, including building or unit information where applicable. | Free text. |
+| `address.province` | String | State, province, or other first-level administrative area. | Free text. |
+| `address.city` | String | City or locality. | Free text. |
+| `address.postalCode` | String | Postal or ZIP code for the registered address. | Use the format defined by the address country. |
+| `address.country` | String | Country of the registered address. | ISO 3166-1 alpha-2 country code, for example `IN`. |
+| `documentIds` | Array of strings | IDs of the company documents returned by the upload API. | Include the IDs for the uploaded `CertificateOfIncorporation` and `ProofOfAddress` documents. |
 
 #### Response
 
@@ -283,8 +332,8 @@ Body:
 
 ```http
 GET /api/v1/e-kyb/verification/company/{companyId}
- Authorization: Bearer <userBearerToken>
- x-kyb-access-token: <kybAdminToken>
+Authorization: Bearer <userBearerToken>
+x-kyb-access-token: <kybAdminToken>
 ```
 
 #### Response
@@ -328,29 +377,28 @@ GET /api/v1/e-kyb/verification/company/{companyId}
 
 The person submitting the business verification details can be either a `Shareholder` or a `Representative`.
 
-* If they are a shareholder, add them as `type: "Shareholder"` and include their share percentage.
-* If they are a Representative: upload a `PowerOfAttorney` document first with `entityType` — `Individual` via `POST /api/v1/document/upload` to obtain its `documentId`. Then call the `PATCH /api/v1/e-kyb/verification/company/{companyId}/company-executives` endpoint with `type: "Representative"` and include a `documentIds` array containing the Power of Attorney `documentId` (example request/response shown below).
+* If they are a shareholder, add them with `type: "Shareholder"` and include their share percentage.
+* If they are a representative, first upload a `PowerOfAttorney` document with `entityType: "Individual"` using `POST /api/v1/document/upload` to obtain its `documentId`. Then call `PATCH /api/v1/e-kyb/verification/company/{companyId}/company-executives` with `type: "Representative"` and a `documentIds` array containing the Power of Attorney document ID. An example request and response are shown below.
 
-Note: Prefer the simple flows developers will use most often.
-
-- Add Shareholders and executives using `POST /company-executives`.
+- Add shareholders and executives using `POST /company-executives`.
 - If a user is both a shareholder and the company's representative, add them as a `Shareholder` (POST); no Power of Attorney is required.
 - Use `PATCH /company-executives` only when attaching or updating a Representative's Power of Attorney — include the POA `documentId` in `documentIds`.
-Note: The `PATCH /company-executives` endpoint accepts the same request body shape as the `POST` example above. When updating a Representative, include the `documentIds` field with the Power of Attorney `documentId`.
 
-> Note: To perform KYC for UBO, generate a new `kycAdminToken` by passing the `businessId`, and then continue with the same flow described in the [Hypersign API Custom Widget Integration Guide](./Hypersign-API-Custom-Widget-Integration-Guide.md).
+The `PATCH /company-executives` endpoint accepts the same request-body shape as the `POST` example above. When updating a representative, include the Power of Attorney `documentId` in `documentIds`.
+
+> To perform KYC for a UBO, generate a new `kycAdminToken` by passing the `businessId`, then follow the flow described in the [Hypersign API Custom Widget Integration Guide](./Hypersign-API-Custom-Widget-Integration-Guide.md).
 
 #### Request
 
 ```http
 POST /api/v1/e-kyb/verification/company/{companyId}/company-executives
- Authorization: Bearer <userBearerToken>
- x-kyb-access-token: <kybAdminToken>
- x-ssi-access-token: <ssiAdminToken>
+Authorization: Bearer <userBearerToken>
+x-kyb-access-token: <kybAdminToken>
+x-ssi-access-token: <ssiAdminToken>
 Content-Type: application/json
 ```
 
-Body:
+Request body:
 
 ```json
 {
@@ -390,13 +438,13 @@ If the person completing the form is the company representative, use the PATCH e
 
 ```http
 PATCH /api/v1/e-kyb/verification/company/{companyId}/company-executives
- Authorization: Bearer <userBearerToken>
- x-kyb-access-token: <kybAdminToken>
- x-ssi-access-token: <ssiAdminToken>
+Authorization: Bearer <userBearerToken>
+x-kyb-access-token: <kybAdminToken>
+x-ssi-access-token: <ssiAdminToken>
 Content-Type: application/json
 ```
 
-Body:
+Request body:
 
 ```json
 {
@@ -422,7 +470,6 @@ Body:
     "type": "Representative",
     "__v": 0,
     "createdAt": "2026-07-13T10:46:00.028Z",
-    "companyId": "6a54c1e7d635deb3a95e82de",
     "email": "hs:doc:dxvehl6bwlimjaga-u_nznfjujsoohoao9hf_yblpny",
     "mailSent": true,
     "name": "xyz",
@@ -444,8 +491,8 @@ Body:
 
 ```http
 GET /api/v1/compliance?entityId=<entity-id>
- Authorization: Bearer <userBearerToken>
- x-kyb-access-token:  <kybAdminToken>
+Authorization: Bearer <userBearerToken>
+x-kyb-access-token: <kybAdminToken>
 ```
 
 Query parameters:
