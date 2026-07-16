@@ -445,7 +445,7 @@ Body:
 ```http
 GET /api/v1/compliance?entityId=<entity-id>
  Authorization: Bearer <userBearerToken>
- x-kyc-access-token: <kyc-service-token>
+ x-kyb-access-token:  <kybAdminToken>
 ```
 
 Query parameters:
