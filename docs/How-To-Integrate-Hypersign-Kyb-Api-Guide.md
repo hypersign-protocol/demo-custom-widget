@@ -283,7 +283,7 @@ Body:
 
 ```http
 GET /api/v1/e-kyb/verification/company/{companyId}
-Authorization: Bearer <userBearerToken>
+ Authorization: Bearer <userBearerToken>
  x-kyb-access-token: <kybAdminToken>
 ```
 
