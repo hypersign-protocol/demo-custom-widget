@@ -177,9 +177,9 @@ Upload both the Certificate of Incorporation and Proof of Address documents, and
 
 ```http
 POST /api/v1/document/upload
-Authorization: Bearer <user-bearer-token>
- x-kyb-access-token: <kyb-admin-token>
- x-ssi-access-token: <ssi-admin-token>
+Authorization: Bearer <userBearerToken>
+ x-kyb-access-token: <kybAdminToken>
+ x-ssi-access-token: <ssiAdminToken>
 Content-Type: multipart/form-data
 ```
 
@@ -212,9 +212,9 @@ Form fields:
 
 ```http
 POST /api/v1/e-kyb/verification/company
-Authorization: Bearer <user-bearer-token>
- x-kyb-access-token: <kyb-admin-token>
- x-ssi-access-token: <ssi-admin-token>
+Authorization: Bearer <userBearerToken>
+ x-kyb-access-token: <kybAdminToken>
+ x-ssi-access-token: <ssiAdminToken>
 Content-Type: application/json
 ```
 
@@ -283,8 +283,8 @@ Body:
 
 ```http
 GET /api/v1/e-kyb/verification/company/{companyId}
-Authorization: Bearer <user-bearer-token>
- x-kyb-access-token: <kyb-admin-token>
+Authorization: Bearer <userBearerToken>
+ x-kyb-access-token: <kybAdminToken>
 ```
 
 #### Response
@@ -344,9 +344,9 @@ Note: The `PATCH /company-executives` endpoint accepts the same request body sha
 
 ```http
 POST /api/v1/e-kyb/verification/company/{companyId}/company-executives
-Authorization: Bearer <user-bearer-token>
- x-kyb-access-token: <kyb-admin-token>
- x-ssi-access-token: <ssi-admin-token>
+Authorization: Bearer <userBearerToken>
+ x-kyb-access-token: <kybAdminToken>
+ x-ssi-access-token: <ssiAdminToken>
 Content-Type: application/json
 ```
 
@@ -390,9 +390,9 @@ If the person completing the form is the company representative, use the PATCH e
 
 ```http
 PATCH /api/v1/e-kyb/verification/company/{companyId}/company-executives
-Authorization: Bearer <user-bearer-token>
- x-kyb-access-token: <kyb-admin-token>
- x-ssi-access-token: <ssi-admin-token>
+Authorization: Bearer <userBearerToken>
+ x-kyb-access-token: <kybAdminToken>
+ x-ssi-access-token: <ssiAdminToken>
 Content-Type: application/json
 ```
 
@@ -444,7 +444,7 @@ Body:
 
 ```http
 GET /api/v1/compliance?entityId=<entity-id>
-Authorization: Bearer <user-bearer-token>
+Authorization: Bearer <userBearerToken>
  x-kyc-access-token: <kyc-service-token>
 ```
 
