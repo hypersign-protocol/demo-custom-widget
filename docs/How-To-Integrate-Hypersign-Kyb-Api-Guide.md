@@ -187,16 +187,9 @@ Content-Type: multipart/form-data
 
 | Field | Type | Description | Supported values / format |
 |---|---|---|---|
-| `file` | File (binary) | The business document to upload. | PDF, JPG, JPEG, PNG, or GIF. |
-| `entityType` | String (enum) | The entity to which the document relates. | `Company` or `Individual`; see [supported entity types](#supported-entity-types). |
+| `file` | File (binary) | The business document to upload. | PDF, JPG, JPEG, PNG, or GIF. Maximum size: `5242880` bytes (5 MiB). |
+| `entityType` | String (enum) | The entity to which the document relates. | `Company` or `Individual`. |
 | `documentType` | String (enum) | Classifies the document so it can be used in the appropriate KYB step. | `CertificateOfIncorporation`, `ProofOfAddress`, or `PowerOfAttorney`; see [supported-document-types](#supported-document-types). |
-
-##### Supported entity types
-
-| Value | Description | Use with |
-|---|---|---|
-| `Company` | A legal business entity being verified. | `CertificateOfIncorporation` and `ProofOfAddress` when creating a company verification. |
-| `Individual` | A natural person associated with the company. | `PowerOfAttorney` for a company representative. |
 
 ##### Supported document types
 
@@ -223,19 +216,16 @@ Content-Type: multipart/form-data
 }
 ```
 
-#### Verification status meanings
+#### Document verification status meanings
 
-The company `status` field supports the following values:
+The document `verification.status` field supports the following values:
 
 | Status | Meaning |
 |---|---|
-| `Submitted` | Default status when a company is added. KYB verification has not yet started. |
-| `InProgress` | KYB verification has started. |
-| `Approved` | Company KYB verification completed successfully and was approved by the customer. |
-| `Rejected` | Company KYB verification completed and was rejected by the customer. |
-| `Completed` | Company KYB verification is finished, regardless of whether the outcome was successful or unsuccessful. |
-
-> `Success` and `Failed` in the compliance response describe the outcome of an individual compliance check. They are not company verification status values.
+| `Submitted` | Document uploaded, waiting to be verified. |
+| `InProgress` | Verification process is ongoing. |
+| `Verified` | Document is authentic and approved. |
+| `Rejected` | Document failed verification. |
 
 ### 4.2 Create a company verification
 
@@ -257,7 +247,7 @@ Request body:
   "domain": "acme.example",
   "region": "Asia Pacific",
   "countryOfRegistration": "IN",
-  "registrationNumber": "123456789",
+  "registrationNumber": "U12345KA2024PLC123456",
   "registrationNumberType": "CIN",
   "address": {
     "street": "123 Business St",
@@ -277,16 +267,113 @@ Request body:
 | `name` | String | Legal or trading name of the company. | Free text. |
 | `domain` | String | Company's internet domain. | Domain name, for example `acme.example`. |
 | `region` | String | Geographic region in which the company operates or is registered. | Free text, for example `Asia Pacific`. |
-| `countryOfRegistration` | String | Country where the company is registered. | ISO 3166-1 alpha-2 country code, for example `IN`. |
-| `registrationNumber` | String | Company registration number assigned by the relevant authority. | Use the format issued by the registering authority. |
-| `registrationNumberType` | String | Name of the registration-number scheme. | Jurisdiction-specific value; for example, `CIN` for an Indian Corporate Identification Number. |
+| `countryOfRegistration` | String (enum) | Country where the company is officially registered. | One of the supported ISO 3166-1 alpha-2 codes; see [supported countries of registration](#supported-countries-of-registration). |
+| `registrationNumber` | String | Unique company registration number issued by the relevant authority. | Required. Its format must match the selected `registrationNumberType`. |
+| `registrationNumberType` | String (enum) | Registration-number scheme used by the company. | Select a type supported for `countryOfRegistration`; see [supported registration-number types](#supported-registration-number-types). |
 | `address` | Object | Registered business address. | Object containing the address fields below. |
 | `address.street` | String | Street address, including building or unit information where applicable. | Free text. |
 | `address.province` | String | State, province, or other first-level administrative area. | Free text. |
 | `address.city` | String | City or locality. | Free text. |
 | `address.postalCode` | String | Postal or ZIP code for the registered address. | Use the format defined by the address country. |
-| `address.country` | String | Country of the registered address. | ISO 3166-1 alpha-2 country code, for example `IN`. |
+| `address.country` | String (enum) | Country of the registered address. | One of the supported ISO 3166-1 alpha-2 codes; see [supported countries](#supported-countries-of-registration). |
 | `documentIds` | Array of strings | IDs of the company documents returned by the upload API. | Include the IDs for the uploaded `CertificateOfIncorporation` and `ProofOfAddress` documents. |
+
+#### Supported countries of registration
+
+`countryOfRegistration` must be one of the following ISO 3166-1 alpha-2 codes. Use `XX` only when the country is not represented by a listed code, and pair it with `registrationNumberType: "OTHER"`.
+
+| Region | Supported country codes |
+|---|---|
+| Asia-Pacific | `IN` India, `SG` Singapore, `CN` China, `JP` Japan, `HK` Hong Kong, `ID` Indonesia, `VN` Vietnam, `TH` Thailand, `MY` Malaysia, `PH` Philippines, `KR` South Korea, `AU` Australia, `NZ` New Zealand, `BD` Bangladesh, `PK` Pakistan, `LK` Sri Lanka, `NP` Nepal, `KH` Cambodia, `MM` Myanmar, `BN` Brunei, `LA` Laos, `MN` Mongolia, `TL` Timor-Leste |
+| North America, Central America, and Caribbean | `US` United States, `CA` Canada, `MX` Mexico, `BS` Bahamas, `CR` Costa Rica, `DO` Dominican Republic, `GT` Guatemala, `JM` Jamaica, `PA` Panama |
+| Europe | `GB` United Kingdom, `DE` Germany, `FR` France, `NL` Netherlands, `AT` Austria, `BE` Belgium, `CH` Switzerland, `DK` Denmark, `ES` Spain, `IE` Ireland, `IT` Italy, `NO` Norway, `PL` Poland, `PT` Portugal, `SE` Sweden |
+| South America | `BR` Brazil, `AR` Argentina, `CL` Chile, `CO` Colombia, `PE` Peru, `VE` Venezuela |
+| Middle East and Africa | `AE` United Arab Emirates, `SA` Saudi Arabia, `QA` Qatar, `KW` Kuwait, `BH` Bahrain, `OM` Oman, `ZA` South Africa, `NG` Nigeria |
+| Other | `XX` Other / unsupported country |
+
+#### Supported registration-number types
+
+Select a `registrationNumberType` for the same country as `countryOfRegistration`. The API validates `registrationNumber` against the selected type's format.
+
+| Country | Type | Registration number | Issuing authority |
+|---|---|---|---|
+| India (`IN`) | `CIN` | Corporate Identification Number | Ministry of Corporate Affairs (MCA) |
+| India (`IN`) | `LLPIN` | Limited Liability Partnership Identification Number | Ministry of Corporate Affairs (MCA) |
+| India (`IN`) | `GSTIN` | Goods and Services Tax Identification Number | GSTN |
+| Singapore (`SG`) | `UEN` | Unique Entity Number | ACRA |
+| China (`CN`) | `USCC` | Unified Social Credit Code | State Administration for Market Regulation |
+| Japan (`JP`) | `HOJIN_BANGO` | Corporate Number | National Tax Agency |
+| Hong Kong (`HK`) | `BRN` | Business Registration Number | Inland Revenue Department |
+| Indonesia (`ID`) | `NIB` | Nomor Induk Berusaha | OSS / BKPM |
+| Vietnam (`VN`) | `ERC` | Enterprise Registration Certificate | Ministry of Planning and Investment |
+| Thailand (`TH`) | `CRN_TH` | Company Registration Number | Department of Business Development (DBD) |
+| Thailand (`TH`) | `TIN_TH` | Tax Identification Number | Revenue Department |
+| Malaysia (`MY`) | `ROC` | Company Registration Number | SSM (Companies Commission of Malaysia) |
+| Malaysia (`MY`) | `GST_MY` | Goods and Services Tax Number | Royal Malaysian Customs |
+| Philippines (`PH`) | `SEC_REG_NO` | SEC Registration Number | Securities and Exchange Commission |
+| Philippines (`PH`) | `TIN_PH` | Taxpayer Identification Number | BIR |
+| South Korea (`KR`) | `BRN_KR` | Business Registration Number | National Tax Service |
+| South Korea (`KR`) | `CRN_KR` | Corporate Registration Number | Court Registry |
+| Australia (`AU`) | `ABN` | Australian Business Number | Australian Business Register |
+| Australia (`AU`) | `ACN` | Australian Company Number | ASIC |
+| New Zealand (`NZ`) | `NZBN` | New Zealand Business Number | Companies Office |
+| New Zealand (`NZ`) | `IRD` | Inland Revenue Number | Inland Revenue |
+| Bangladesh (`BD`) | `BIN` | Business Identification Number | National Board of Revenue |
+| Bangladesh (`BD`) | `TIN_BD` | Taxpayer Identification Number | National Board of Revenue |
+| Pakistan (`PK`) | `NTN` | National Tax Number | Federal Board of Revenue |
+| Pakistan (`PK`) | `STRN` | Sales Tax Registration Number | Federal Board of Revenue |
+| Pakistan (`PK`) | `SECP_REG` | SECP Company Registration Number | Securities and Exchange Commission of Pakistan |
+| Sri Lanka (`LK`) | `BRN_LK` | Business Registration Number | Registrar of Companies |
+| Nepal (`NP`) | `PAN_NP` | Permanent Account Number | Inland Revenue Department |
+| Nepal (`NP`) | `CRN_NP` | Company Registration Number | Office of Company Registrar |
+| Cambodia (`KH`) | `TRN_KH` | Taxpayer Registration Number | General Department of Taxation |
+| Myanmar (`MM`) | `BRN_MM` | Business Registration Number | Directorate of Investment and Company Administration |
+| Brunei (`BN`) | `ROCN` | Registry of Companies Number | Registrar of Companies |
+| Laos (`LA`) | `ERN_LA` | Enterprise Registration Number | Ministry of Industry and Commerce |
+| Mongolia (`MN`) | `CRN_MN` | Company Registration Number | General Authority for State Registration |
+| Timor-Leste (`TL`) | `NIPC_TL` | Business Identification Number | National Directorate of Business Registration |
+| United Kingdom (`GB`) | `CRN_UK` | Company Registration Number | Companies House |
+| United Kingdom (`GB`) | `VAT_UK` | VAT Number | HMRC |
+| Germany (`DE`) | `HRB` | Commercial Register Number | Handelsregister |
+| Germany (`DE`) | `USTID` | VAT Identification Number | Federal Central Tax Office |
+| France (`FR`) | `SIREN` | SIREN Number | INSEE |
+| France (`FR`) | `SIRET` | SIRET Number | INSEE |
+| Netherlands (`NL`) | `KVK` | Chamber of Commerce Number | Dutch Chamber of Commerce |
+| Spain (`ES`) | `NIF_ES` | Numero de Identificacion Fiscal | Agencia Tributaria |
+| Italy (`IT`) | `VAT_IT` | Partita IVA | Agenzia delle Entrate |
+| Ireland (`IE`) | `CRO_IE` | Company Registration Number | Companies Registration Office |
+| Switzerland (`CH`) | `CHE_CH` | Swiss Company UID | Federal Statistical Office |
+| Belgium (`BE`) | `CBE_BE` | Enterprise Number | Crossroads Bank for Enterprises |
+| Austria (`AT`) | `FN_AT` | Firmenbuch Number | Firmenbuch |
+| Sweden (`SE`) | `ORG_SE` | Organisation Number | Bolagsverket |
+| Norway (`NO`) | `ORG_NO` | Organisation Number | Bronnoysund Register Centre |
+| Denmark (`DK`) | `CVR_DK` | Central Business Register Number | Danish Business Authority |
+| Portugal (`PT`) | `NIF_PT` | Numero de Identificacao Fiscal | Autoridade Tributaria |
+| Poland (`PL`) | `KRS_PL` | National Court Register Number | Ministry of Justice |
+| Brazil (`BR`) | `CNPJ` | Cadastro Nacional da Pessoa Juridica | Receita Federal |
+| Argentina (`AR`) | `CUIT_AR` | Clave Unica de Identificacion Tributaria | AFIP |
+| Chile (`CL`) | `RUT_CL` | Rol Unico Tributario | Servicio de Impuestos Internos |
+| Colombia (`CO`) | `NIT_CO` | Numero de Identificacion Tributaria | DIAN |
+| Peru (`PE`) | `RUC_PE` | Registro Unico de Contribuyentes | SUNAT |
+| Venezuela (`VE`) | `RIF_VE` | Registro de Informacion Fiscal | SENIAT |
+| United Arab Emirates (`AE`) | `TRN` | Tax Registration Number | Federal Tax Authority |
+| Saudi Arabia (`SA`) | `CR_SA` | Commercial Registration Number | Ministry of Commerce |
+| Qatar (`QA`) | `CR_QA` | Commercial Registration Number | Ministry of Commerce and Industry |
+| Kuwait (`KW`) | `CR_KW` | Commercial Registration Number | Ministry of Commerce and Industry |
+| Bahrain (`BH`) | `CR_BH` | Commercial Registration Number | Ministry of Industry and Commerce |
+| Oman (`OM`) | `CR_OM` | Commercial Registration Number | Ministry of Commerce, Industry and Investment Promotion |
+| South Africa (`ZA`) | `CIPC` | Company Registration Number | Companies and Intellectual Property Commission |
+| Nigeria (`NG`) | `RCN` | Corporate Affairs Commission Number | Corporate Affairs Commission |
+| United States (`US`) | `EIN` | Employer Identification Number | Internal Revenue Service (IRS) |
+| Canada (`CA`) | `BN` | Business Number | Canada Revenue Agency |
+| Mexico (`MX`) | `RFC` | Registro Federal de Contribuyentes | SAT |
+| Bahamas (`BS`) | `TRN_BS` | Taxpayer Registration Number | Department of Inland Revenue |
+| Jamaica (`JM`) | `JAMAICA_TRN` | Taxpayer Registration Number | Tax Administration Jamaica |
+| Guatemala (`GT`) | `RTN_GT` | Registro Tributario NIT | Superintendencia de Administracion Tributaria |
+| Dominican Republic (`DO`) | `RNC_DO` | Registro Nacional de Contribuyentes | Direccion General de Impuestos Internos |
+| Costa Rica (`CR`) | `NITE_CR` | Numero de Identificacion Tributaria | Ministerio de Hacienda |
+| Panama (`PA`) | `RUC_PA` | Registro Unico de Contribuyente | Direccion General de Ingresos |
+| Other / unsupported country (`XX`) | `OTHER` | Other | — |
 
 #### Response
 
@@ -299,7 +386,7 @@ Request body:
     "domain": "acme.example",
     "region": "Asia Pacific",
     "countryOfRegistration": "IN",
-    "registrationNumber": "123456789",
+    "registrationNumber": "U12345KA2024PLC123456",
     "registrationNumberType": "CIN",
     "address": {
       "street": "123 Business St",
@@ -326,6 +413,20 @@ Request body:
 }
 ```
 
+#### Company verification status meanings
+
+The company `status` field supports the following values:
+
+| Status | Meaning |
+|---|---|
+| `Submitted` | Default status when a company is added. KYB verification has not yet started. |
+| `InProgress` | KYB verification has started. |
+| `Approved` | Company KYB verification completed successfully and was approved by the customer. |
+| `Rejected` | Company KYB verification completed and was rejected by the customer. |
+| `Completed` | Company KYB verification is finished, regardless of whether the outcome was successful or unsuccessful. |
+
+> `Success` and `Failed` in the compliance response describe the outcome of an individual compliance check. They are not company verification status values.
+
 ### 4.3 Fetch an existing company
 
 #### Request
@@ -347,7 +448,7 @@ x-kyb-access-token: <kybAdminToken>
       "id": "<company-id>",
       "name": "Acme Corporation",
       "status": "Submitted",
-      "registrationNumber": "123456789",
+      "registrationNumber": "U12345KA2024PLC123456",
       "registrationNumberType": "CIN",
       "address": {
         "street": "123 Business St",
