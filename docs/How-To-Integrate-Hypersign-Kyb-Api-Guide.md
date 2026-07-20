@@ -293,51 +293,36 @@ Request body:
 
 #### Supported registration-number types
 
-Select a `registrationNumberType` for the same country as `countryOfRegistration`. The API validates `registrationNumber` against the selected type's format.
+Select a `registrationNumberType` for the same country as `countryOfRegistration`. The API validates `registrationNumber` against the selected type's format. Each country appears once in the table. Where a country supports multiple types, the Type, Registration number, and Issuing authority columns list the corresponding values on matching lines, in the same order.
 
 | Country | Type | Registration number | Issuing authority |
 |---|---|---|---|
-| India (`IN`) | `CIN` | Corporate Identification Number | Ministry of Corporate Affairs (MCA) |
-| India (`IN`) | `LLPIN` | Limited Liability Partnership Identification Number | Ministry of Corporate Affairs (MCA) |
-| India (`IN`) | `GSTIN` | Goods and Services Tax Identification Number | GSTN |
+| India (`IN`) | `CIN`<br>`LLPIN`<br>`GSTIN` | Corporate Identification Number<br>Limited Liability Partnership Identification Number<br>Goods and Services Tax Identification Number | Ministry of Corporate Affairs (MCA)<br>Ministry of Corporate Affairs (MCA)<br>GSTN |
 | Singapore (`SG`) | `UEN` | Unique Entity Number | ACRA |
 | China (`CN`) | `USCC` | Unified Social Credit Code | State Administration for Market Regulation |
 | Japan (`JP`) | `HOJIN_BANGO` | Corporate Number | National Tax Agency |
 | Hong Kong (`HK`) | `BRN` | Business Registration Number | Inland Revenue Department |
 | Indonesia (`ID`) | `NIB` | Nomor Induk Berusaha | OSS / BKPM |
 | Vietnam (`VN`) | `ERC` | Enterprise Registration Certificate | Ministry of Planning and Investment |
-| Thailand (`TH`) | `CRN_TH` | Company Registration Number | Department of Business Development (DBD) |
-| Thailand (`TH`) | `TIN_TH` | Tax Identification Number | Revenue Department |
-| Malaysia (`MY`) | `ROC` | Company Registration Number | SSM (Companies Commission of Malaysia) |
-| Malaysia (`MY`) | `GST_MY` | Goods and Services Tax Number | Royal Malaysian Customs |
-| Philippines (`PH`) | `SEC_REG_NO` | SEC Registration Number | Securities and Exchange Commission |
-| Philippines (`PH`) | `TIN_PH` | Taxpayer Identification Number | BIR |
-| South Korea (`KR`) | `BRN_KR` | Business Registration Number | National Tax Service |
-| South Korea (`KR`) | `CRN_KR` | Corporate Registration Number | Court Registry |
-| Australia (`AU`) | `ABN` | Australian Business Number | Australian Business Register |
-| Australia (`AU`) | `ACN` | Australian Company Number | ASIC |
-| New Zealand (`NZ`) | `NZBN` | New Zealand Business Number | Companies Office |
-| New Zealand (`NZ`) | `IRD` | Inland Revenue Number | Inland Revenue |
-| Bangladesh (`BD`) | `BIN` | Business Identification Number | National Board of Revenue |
-| Bangladesh (`BD`) | `TIN_BD` | Taxpayer Identification Number | National Board of Revenue |
-| Pakistan (`PK`) | `NTN` | National Tax Number | Federal Board of Revenue |
-| Pakistan (`PK`) | `STRN` | Sales Tax Registration Number | Federal Board of Revenue |
-| Pakistan (`PK`) | `SECP_REG` | SECP Company Registration Number | Securities and Exchange Commission of Pakistan |
+| Thailand (`TH`) | `CRN_TH`<br>`TIN_TH` | Company Registration Number<br>Tax Identification Number | Department of Business Development (DBD)<br>Revenue Department |
+| Malaysia (`MY`) | `ROC`<br>`GST_MY` | Company Registration Number<br>Goods and Services Tax Number | SSM (Companies Commission of Malaysia)<br>Royal Malaysian Customs |
+| Philippines (`PH`) | `SEC_REG_NO`<br>`TIN_PH` | SEC Registration Number<br>Taxpayer Identification Number | Securities and Exchange Commission<br>BIR |
+| South Korea (`KR`) | `BRN_KR`<br>`CRN_KR` | Business Registration Number<br>Corporate Registration Number | National Tax Service<br>Court Registry |
+| Australia (`AU`) | `ABN`<br>`ACN` | Australian Business Number<br>Australian Company Number | Australian Business Register<br>ASIC |
+| New Zealand (`NZ`) | `NZBN`<br>`IRD` | New Zealand Business Number<br>Inland Revenue Number | Companies Office<br>Inland Revenue |
+| Bangladesh (`BD`) | `BIN`<br>`TIN_BD` | Business Identification Number<br>Taxpayer Identification Number | National Board of Revenue<br>National Board of Revenue |
+| Pakistan (`PK`) | `NTN`<br>`STRN`<br>`SECP_REG` | National Tax Number<br>Sales Tax Registration Number<br>SECP Company Registration Number | Federal Board of Revenue<br>Federal Board of Revenue<br>Securities and Exchange Commission of Pakistan |
 | Sri Lanka (`LK`) | `BRN_LK` | Business Registration Number | Registrar of Companies |
-| Nepal (`NP`) | `PAN_NP` | Permanent Account Number | Inland Revenue Department |
-| Nepal (`NP`) | `CRN_NP` | Company Registration Number | Office of Company Registrar |
+| Nepal (`NP`) | `PAN_NP`<br>`CRN_NP` | Permanent Account Number<br>Company Registration Number | Inland Revenue Department<br>Office of Company Registrar |
 | Cambodia (`KH`) | `TRN_KH` | Taxpayer Registration Number | General Department of Taxation |
 | Myanmar (`MM`) | `BRN_MM` | Business Registration Number | Directorate of Investment and Company Administration |
 | Brunei (`BN`) | `ROCN` | Registry of Companies Number | Registrar of Companies |
 | Laos (`LA`) | `ERN_LA` | Enterprise Registration Number | Ministry of Industry and Commerce |
 | Mongolia (`MN`) | `CRN_MN` | Company Registration Number | General Authority for State Registration |
 | Timor-Leste (`TL`) | `NIPC_TL` | Business Identification Number | National Directorate of Business Registration |
-| United Kingdom (`GB`) | `CRN_UK` | Company Registration Number | Companies House |
-| United Kingdom (`GB`) | `VAT_UK` | VAT Number | HMRC |
-| Germany (`DE`) | `HRB` | Commercial Register Number | Handelsregister |
-| Germany (`DE`) | `USTID` | VAT Identification Number | Federal Central Tax Office |
-| France (`FR`) | `SIREN` | SIREN Number | INSEE |
-| France (`FR`) | `SIRET` | SIRET Number | INSEE |
+| United Kingdom (`GB`) | `CRN_UK`<br>`VAT_UK` | Company Registration Number<br>VAT Number | Companies House<br>HMRC |
+| Germany (`DE`) | `HRB`<br>`USTID` | Commercial Register Number<br>VAT Identification Number | Handelsregister<br>Federal Central Tax Office |
+| France (`FR`) | `SIREN`<br>`SIRET` | SIREN Number<br>SIRET Number | INSEE<br>INSEE |
 | Netherlands (`NL`) | `KVK` | Chamber of Commerce Number | Dutch Chamber of Commerce |
 | Spain (`ES`) | `NIF_ES` | Numero de Identificacion Fiscal | Agencia Tributaria |
 | Italy (`IT`) | `VAT_IT` | Partita IVA | Agenzia delle Entrate |
@@ -485,7 +470,7 @@ The person submitting the business verification details can be either a `Shareho
 - If a user is both a shareholder and the company's representative, add them as a `Shareholder` (POST); no Power of Attorney is required.
 - Use `PATCH /company-executives` only when attaching or updating a Representative's Power of Attorney — include the POA `documentId` in `documentIds`.
 
-The `PATCH /company-executives` endpoint accepts the same request-body shape as the `POST` example above. When updating a representative, include the Power of Attorney `documentId` in `documentIds`.
+Use the `POST /company-executives` endpoint below to add a shareholder or executive using the request body shown. To add or update a representative, use the `PATCH /company-executives` endpoint in [section 4.5](#45-update-a-representative) and include the Power of Attorney `documentId` in `documentIds`.
 
 > To perform KYC for a UBO, generate a new `kycAdminToken` by passing the `businessId`, then follow the flow described in the [Hypersign API Custom Widget Integration Guide](./Hypersign-API-Custom-Widget-Integration-Guide.md).
 
