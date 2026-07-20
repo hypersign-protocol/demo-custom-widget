@@ -448,7 +448,116 @@ Webhooks work via a **Fire-and-Forget** architectural notification strategy. Whe
 
 ```
 
-#### Step 3: Implement Webhook Listener and Token Verification
+#### Step 3 (Optional): Check consent status when a webhook is unavailable
+
+Use this server-side fallback when your application cannot receive the webhook, for example because the configured webhook endpoint is temporarily unreachable.
+
+```http
+GET /api/v2/consents/{sessionId}
+x-kyc-access-token: <kycAdminToken>
+```
+
+If verification has completed, the response contains an `idToken`. Process this token exactly as you would the `idToken` received in the webhook payload: use it to request the verified consent data.
+
+```json
+{
+  "success": true,
+  "message": "success",
+  "data": {
+    "idToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+  }
+}
+```
+
+If verification does not yet exist for the session, the response contains the progress recorded so far. This lets you identify the last completed step or the step that failed.
+
+```json
+{
+  "success": true,
+  "message": "success",
+  "data": [
+    {
+      "stepName": "start",
+      "status": "success",
+      "createdAt": "2026-07-15T08:23:29.221Z"
+    },
+    {
+      "stepName": "ocrIdDoc",
+      "status": "fail",
+      "errorCode": 1,
+      "error": "error message",
+      "createdAt": "2026-07-15T08:25:38.923Z"
+    }
+  ]
+}
+```
+
+##### Progress response fields
+
+| Field | Description |
+|---|---|
+| `stepName` | The verification step that generated the progress record. See [supported step names](#supported-step-names). |
+| `status` | `success` when the step completed, or `fail` when it did not complete. |
+| `errorCode` | Numeric failure code. Present for failed steps when the service provides a code. See the step-specific error-code tables below. |
+| `error` | Human-readable error message for the failed step. |
+| `createdAt` | ISO 8601 timestamp when the progress record was created. |
+
+##### Supported step names
+
+The `stepName` value is one of the following keys. The `start` value indicates that the verification session started; the remaining values identify the corresponding verification step.
+
+| Step name | Description |
+|---|---|
+| `start` | Verification session started. |
+| `liveliness` | Liveness/selfie verification. |
+| `ocrIdDoc` | Document OCR and facial-authentication verification. |
+| `zkProofVerification` | Zero-knowledge proof verification. |
+| `userConsent` | User consent step. |
+| `mintSBT` | Soulbound-token minting step. |
+
+##### Liveliness error codes
+
+| Error code | Error message |
+|---|---|
+| `0` | Liveness could not be assessed. |
+| `1` | Possible spoof detected. |
+| `2` | An unspecified error occurred in a field. |
+| `4` | Evaluation failed due to bad image quality. |
+| `5` | Face is too close to the camera. |
+| `6` | Face not found in the image. |
+| `7` | Face size is too small in the image. |
+| `8` | Please face the camera directly. Your face angle is too steep for verification. |
+| `9` | Could not evaluate due to the format of the images used. |
+| `10` | Could not evaluate due to internal error |
+| `11` | Error occurred during image preprocessing. |
+| `12` | Multiple faces detected, only one is allowed. |
+| `13` | The face is too close the border |
+| `14` | The face is cropped. |
+| `15` | A license error occurred. |
+| `16` | The face is obstructed. |
+| `17` | No liveness detected. |
+| `18` | The person has their eyes closed |
+| `66` | The eye is obstructed. |
+
+##### Document OCR error codes (`ocrIdDoc`)
+
+| Error code | Error message |
+|---|---|
+| `0` | Face check could not be performed. |
+| `1` | Faces does not match |
+| `2` | Face not found in the image. |
+| `4` | Failed to perform face check due to the pose of the face. |
+| `5` | Failed, due to problems in the extraction of the facial pattern |
+| `6` | Failed, because document has already been verified in some other account with this service |
+
+##### ZK proof verification error codes (`zkProofVerification`)
+
+| Error code | Error message |
+|---|---|
+| `4` | ZK proof verification failed. |
+| `5` | ZK proof requirement verification failed. |
+
+#### Step 4: Implement Webhook Listener and Token Verification
 
 Upon receiving the payload, make a back-channel request using your `kycAccessToken` to download the fully verified data packet structures.
 
