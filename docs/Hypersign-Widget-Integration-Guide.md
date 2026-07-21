@@ -448,7 +448,32 @@ Webhooks work via a **Fire-and-Forget** architectural notification strategy. Whe
 
 ```
 
-#### Step 3 (Optional): Check consent status when a webhook is unavailable
+### Step 3: Listening to webhook to received idToken
+
+Once verification is complete, Hypersign sends a webhook notification to your configured endpoint.
+
+Your webhook handler should:
+
+1. Extract the idToken from the webhook payload.
+2. Store or process the idToken for the next step.
+
+```javascript
+
+app.post('/api/v1/webhook/kyc', async (req, res) => {
+    try {
+        const { idToken, sessionId } = req.body;
+        
+        // Return 200 immediately to prevent timing timeouts on Hypersign framework
+        res.status(200).json({ received: true });
+        // Store or process the idToken for the next step
+        console.log("Received idToken:", idToken);
+    } catch (webhookProcessingError) {
+        console.error(`[Webhook Process Processing Error Event]:`, webhookProcessingError);
+    }
+});
+
+```
+### Step 4 (Optional): Check consent status when a webhook is unavailable
 
 Use this server-side fallback when your application cannot receive the webhook, for example because the configured webhook endpoint is temporarily unreachable.
 
@@ -457,7 +482,9 @@ GET /api/v2/consents/{sessionId}
 x-kyc-access-token: <kycAdminToken>
 ```
 
-If verification has completed, the response contains an `idToken`. Process this token exactly as you would the `idToken` received in the webhook payload: use it to request the verified consent data.
+If your application cannot receive the webhook (for example, because the webhook endpoint is temporarily unavailable), you can poll this endpoint.
+
+Once verification is complete, the response contains an `idToken`. Use this `idToken` exactly the same way as the one received from the webhook. The next step explains how to retrieve the verification result using the `idToken`..
 
 ```json
 {
@@ -491,7 +518,6 @@ If verification does not yet exist for the session, the response contains the pr
   ]
 }
 ```
-
 ##### Progress response fields
 
 | Field | Description |
@@ -557,34 +583,31 @@ The `stepName` value is one of the following keys. The `start` value indicates t
 | `4` | ZK proof verification failed. |
 | `5` | ZK proof requirement verification failed. |
 
-#### Step 4: Implement Webhook Listener and Token Verification
+### Step 5: Call verification API to retrieve data using `idToken`
 
-Upon receiving the payload, make a back-channel request using your `kycAccessToken` to download the fully verified data packet structures.
+Once you have obtained the `idToken` (either from the webhook or from the fallback API), use it to retrieve the complete verification result.
+
+```http
+GET /api/v1/e-kyc/verification/user-consent?idToken={idToken}
+x-kyc-access-token: <kycAdminToken>
+```
+
+Example:
 
 ```javascript
-app.post('/api/v1/webhook/kyc', async (req, res) => {
-    try {
-        const { idToken, sessionId } = req.body;
-        
-        // Return 200 immediately to prevent timing timeouts on Hypersign framework
-        res.status(200).json({ received: true });
+const complianceVerificationUrl =
+    `${KYC_BASE_URL}/api/v1/e-kyc/verification/user-consent?idToken=${idToken}`;
 
-        // Retrieve background administrative tokens to perform the lookups
-        const kycAdminToken = await fetchAdminAccessToken(process.env.KYC_API_SECRET, 'access_service_kyc');
+const response = await fetch(complianceVerificationUrl, {
+    method: "GET",
+    headers: {
+        "x-kyc-access-token": kycAdminToken
+    }
+});
 
-        // Request full document parsing using the verification identity token payload
-        const complianceVerificationUrl = `${KYC_BASE_URL}/api/v1/e-kyc/verification/user-consent?idToken=${idToken}`;
-        
-        const dataFetchResponse = await fetch(complianceVerificationUrl, {
-            method: 'GET',
-            headers: {
-                'x-kyc-access-token': kycAdminToken
-            }
-        });
+const consentDataResponse = await response.json();
 
-        const consentDataResponse = await dataFetchResponse.json();
-        
-        if (consentDataResponse && consentDataResponse.success) {
+  if (consentDataResponse && consentDataResponse.success) {
             const targetEmail = Object.keys(userKycSessions).find(email => userKycSessions[email].sessionId === sessionId);
                 
             if (targetEmail) {
@@ -595,15 +618,11 @@ app.post('/api/v1/webhook/kyc', async (req, res) => {
                 console.log(`Identity verified successfully for profile account path: ${targetEmail}`);
             }
         }
-    } catch (webhookProcessingError) {
-        console.error(`[Webhook Process Processing Error Event]:`, webhookProcessingError);
-    }
-});
-
 ```
-Example consentDataResponse for `Proof Of Age` consent
 
-```
+Example consentDataResponse for **Proof Of Age** consent:
+
+```json
 {
     "success": true,
     "message": "success",
@@ -676,7 +695,6 @@ Example consentDataResponse for `Proof Of Age` consent
     }
 }
 ```
-
 
 ---
 
