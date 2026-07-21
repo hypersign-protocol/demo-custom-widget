@@ -482,8 +482,6 @@ GET /api/v2/consents/{sessionId}
 x-kyc-access-token: <kycAdminToken>
 ```
 
-If your application cannot receive the webhook (for example, because the webhook endpoint is temporarily unavailable), you can poll this endpoint.
-
 Once verification is complete, the response contains an `idToken`. Use this `idToken` exactly the same way as the one received from the webhook. The next step explains how to retrieve the verification result using the `idToken`..
 
 ```json
