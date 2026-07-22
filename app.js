@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { getCachedAdminTokens, generateKycUserSessionToken } = require('./tokenService')
+const { getCachedAdminTokens, generateKycUserSessionToken, fetchBusinessKycAccessToken } = require('./tokenService')
 const { initializeVerificationSession } = require('./idService')
 const { registerUserDid } = require('./ssiService')
 const { X_ISSUER_VERMETHOD_ID, X_ISSUER_DID, WIDGET_URL } = require('./config')
@@ -40,7 +40,7 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         }
 
         // 2. Prepare Administrative Access Tokens (using file-based cache)
-        const { kycAdminToken, ssiAdminToken } = await getCachedAdminTokens();
+        const { kycAdminToken, kybAdminToken, ssiAdminToken } = await getCachedAdminTokens();
 
         // 3. Initialize the KYC Verification Session
         const sessionId = await initializeVerificationSession(kycAdminToken);
@@ -66,6 +66,7 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
         // 7. Return comprehensive credentials to the client
         res.json({
             kycAdminToken,
+            kybAdminToken,
             ssiAdminToken,
             userBearerToken,
             kycUserAccessToken: userBearerToken,
@@ -79,6 +80,21 @@ app.post('/get-required-tokens-and-session-for-a-user', async (req, res) => {
 
     } catch (error) {
         console.error(`[Onboarding Flow Error]: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Generate a fresh KYC token for a KYB company. The API secret remains on the
+// server; tokenService forwards businessId to /oauth as a query parameter.
+app.post('/kyb/kyc-access-token', async (req, res) => {
+    try {
+        const businessId = typeof req.body?.businessId === 'string' ? req.body.businessId.trim() : '';
+        if (!businessId) return res.status(400).json({ error: "Missing required field: 'businessId'." });
+
+        const kycAccessToken = await fetchBusinessKycAccessToken(businessId);
+        res.json({ kycAccessToken });
+    } catch (error) {
+        console.error(`[KYB Business Token Error]: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });

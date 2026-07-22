@@ -1,4 +1,4 @@
-const { KYC_API_SECRET, SSI_API_SECRET, X_ISSUER_VERMETHOD_ID, X_ISSUER_DID, DEVELOPER_DASHBOARD_SERVICE_BASE_URL, DOMAIN, SSI_BASE_URL, KYC_BASE_URL } = require('./config')
+const { KYC_API_SECRET, SSI_API_SECRET, DEVELOPER_DASHBOARD_SERVICE_BASE_URL } = require('./config')
 const fs = require('fs').promises;
 const path = require('path');
 const { requestDidJwtSignature } = require('./ssiService')
@@ -13,9 +13,11 @@ const EXPIRY_BUFFER_MS = 60000; // 1-minute safety buffer
  * @returns {Promise<string>} - A promise that resolves to the raw access token string.
  * @throws {Error} - Throws an error if the network request fails or the API returns an error structure.
  */
-async function fetchAdminAccessToken(apiSecret, serviceType) {
+async function fetchAdminAccessToken(apiSecret, serviceType, options = {}) {
     const AUTH_ENDPOINT = "/api/v1/app/oauth";
-    const url = `${DEVELOPER_DASHBOARD_SERVICE_BASE_URL}${AUTH_ENDPOINT}?grant_type=${serviceType}`;
+    const query = new URLSearchParams({ grant_type: serviceType });
+    if (options.businessId) query.set('businessId', options.businessId);
+    const url = `${DEVELOPER_DASHBOARD_SERVICE_BASE_URL}${AUTH_ENDPOINT}?${query}`;
 
     try {
         const response = await fetch(url, {
@@ -48,6 +50,16 @@ async function fetchAdminAccessToken(apiSecret, serviceType) {
     }
 }
 
+// Business-scoped KYC tokens are intentionally not cached: the business ID is
+// part of the OAuth grant.
+async function fetchBusinessKycAccessToken(businessId) {
+    if (!businessId || typeof businessId !== 'string') {
+        throw new Error('Missing required business ID.');
+    }
+
+    return fetchAdminAccessToken(KYC_API_SECRET, 'access_service_kyc', { businessId });
+}
+
 
 /**
  * Extracts the expiration timestamp from a JWT payload.
@@ -73,7 +85,7 @@ function getJwtExpiry(token) {
 /**
  * Ensures valid administrative tokens are available by checking a local cache 
  * or fetching fresh ones if they are missing or expired.
- * @returns {Promise<{kycAdminToken: string, ssiAdminToken: string}>}
+ * @returns {Promise<{kycAdminToken: string, kybAdminToken: string, ssiAdminToken: string}>}
  */
 async function getCachedAdminTokens() {
     let cachedData = null;
@@ -89,24 +101,26 @@ async function getCachedAdminTokens() {
 
     const now = Date.now();
 
-    // 2. Validate existence of both required tokens
-    const hasTokens = cachedData?.kycAdminToken && cachedData?.ssiAdminToken;
+    // 2. Validate existence of all service tokens
+    const hasTokens = cachedData?.kycAdminToken && cachedData?.kybAdminToken && cachedData?.ssiAdminToken;
 
     // 3. Check if tokens are expired (including a safety buffer)
     const isExpired = !hasTokens ||
         getJwtExpiry(cachedData.kycAdminToken) <= (now + EXPIRY_BUFFER_MS) ||
+        getJwtExpiry(cachedData.kybAdminToken) <= (now + EXPIRY_BUFFER_MS) ||
         getJwtExpiry(cachedData.ssiAdminToken) <= (now + EXPIRY_BUFFER_MS);
 
     if (!hasTokens || isExpired) {
         console.log(isExpired ? 'Tokens expired/missing. Fetching fresh admin tokens...' : 'Initializing admin tokens...');
 
         // 4. Fetch fresh tokens from the Developer Dashboard
-        const [kycAdminToken, ssiAdminToken] = await Promise.all([
+        const [kycAdminToken, kybAdminToken, ssiAdminToken] = await Promise.all([
             fetchAdminAccessToken(KYC_API_SECRET, 'access_service_kyc'),
+            fetchAdminAccessToken(KYC_API_SECRET, 'access_service_kyb'),
             fetchAdminAccessToken(SSI_API_SECRET, 'access_service_ssi')
         ]);
 
-        const freshTokens = { kycAdminToken, ssiAdminToken };
+        const freshTokens = { kycAdminToken, kybAdminToken, ssiAdminToken };
 
         // 5. Update the cache file
         try {
@@ -156,5 +170,6 @@ async function generateKycUserSessionToken(claims, kycAdminToken, ssiAdminToken,
 
 module.exports = {
     getCachedAdminTokens,
-    generateKycUserSessionToken
+    generateKycUserSessionToken,
+    fetchBusinessKycAccessToken
 }
