@@ -37,70 +37,7 @@ Authentication is a two-step process:
 1. Generate a **KYC API Secret** from the Hypersign Dashboard.
 2. Exchange the API Secret for a short-lived **Access Token**.
 
-The generated Access Token must be included in the `Authorization` header of every API request.
-
-## Step 1: Generate a KYC API Secret
-
-Log in to the [**Hypersign Dashboard**](https://entity.dashboard.hypersign.id/) and navigate to: **Developer Hub → API Keys**
-
-Generate a new **KYC API Secret** and securely store it in your application's environment variables.
-
-Example:
-
-```text
-KYC_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-> **Important:** Never expose your `KYC_API_SECRET` in client-side applications (Web, Android, or iOS). It should only be used from your trusted backend or server environment.
-
-## Step 2: Generate an Access Token
-
-Exchange the `KYC_API_SECRET` for an Access Token by calling the following endpoint.
-
-### Request
-
-```http
-POST https://api.entity.dashboard.hypersign.id/api/v1/app/oauth?grant_type=access_service_kyc
-```
-
-### Request Headers
-
-| Header | Value |
-|---------|-------|
-| X-Api-Secret-Key | `<KYC_API_SECRET>` |
-| Accept | application/json |
-
-### Successful Response
-
-```json
-{
-  "access_token": "<ACCESS_TOKEN>",
-  "expiresIn": 3600
-}
-```
-
-The returned Access Token is valid until the time specified by the `expiresIn` field.
-
-**Do not generate a new Access Token before every API call.**
-
-Instead:
-
-- Cache the Access Token locally.
-- Reuse the cached token for subsequent API requests.
-- Automatically generate a new Access Token only after the current token expires.
-
-## Step 3: Authenticate API Requests
-
-Include the generated Access Token in the `Authorization` header of every Aadhaar Verification API request.
-
-### Required Headers
-
-| Header | Value |
-|---------|-------|
-| Authorization | `Bearer <ACCESS_TOKEN>` |
-| Content-Type | `application/json` |
-
-All APIs require authentication. Include the following headers with every request.
+The generated Access Token must be included in the `Authorization` header of every API request. Please also read [Detailed Steps To Generate Access Token](/#detailed-steps-to-generate-access-token) section.
 
 ---
 
@@ -780,6 +717,73 @@ Sample Response where the verifier only requested name and dob:
 - Use Selective Discloure mode as much as possible
 
  
+---
+# Detailed Steps To Generate Access Token
+
+## Step 1: Generate a KYC API Secret
+
+Log in to the [**Hypersign Dashboard**](https://entity.dashboard.hypersign.id/) and navigate to: **Developer Hub → API Keys**
+
+Generate a new **KYC API Secret** and securely store it in your application's environment variables.
+
+Example:
+
+```text
+KYC_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+> **Important:** Never expose your `KYC_API_SECRET` in client-side applications (Web, Android, or iOS). It should only be used from your trusted backend or server environment.
+
+## Step 2: Generate an Access Token
+
+Exchange the `KYC_API_SECRET` for an Access Token by calling the following endpoint.
+
+### Request
+
+```http
+POST https://api.entity.dashboard.hypersign.id/api/v1/app/oauth?grant_type=access_service_kyc
+```
+
+### Request Headers
+
+| Header | Value |
+|---------|-------|
+| X-Api-Secret-Key | `<KYC_API_SECRET>` |
+| Accept | application/json |
+
+### Successful Response
+
+```json
+{
+  "access_token": "<ACCESS_TOKEN>",
+  "expiresIn": 3600
+}
+```
+
+The returned Access Token is valid until the time specified by the `expiresIn` field.
+
+**Do not generate a new Access Token before every API call.**
+
+Instead:
+
+- Cache the Access Token locally.
+- Reuse the cached token for subsequent API requests.
+- Automatically generate a new Access Token only after the current token expires.
+
+## Step 3: Authenticate API Requests
+
+Include the generated Access Token in the `Authorization` header of every Aadhaar Verification API request.
+
+### Required Headers
+
+| Header | Value |
+|---------|-------|
+| Authorization | `Bearer <ACCESS_TOKEN>` |
+| Content-Type | `application/json` |
+
+All APIs require authentication. Include the following headers with every request.
+
+
 ---
 
 # Need Help?
