@@ -24,12 +24,10 @@ Whether you are building a banking application, digital onboarding platform, emp
 
 # Base URL
 
-```
+```js
 https://api.cavach.hypersign.id
 ```
-
 ---
-
 # Authentication
 
 All Aadhaar Verification APIs require an **Access Token** for authentication.
@@ -43,9 +41,7 @@ The generated Access Token must be included in the `Authorization` header of eve
 
 ## Step 1: Generate a KYC API Secret
 
-Log in to the **Hypersign Dashboard** and navigate to:
-
-**Developer Hub → API Keys**
+Log in to the [**Hypersign Dashboard**](https://entity.dashboard.hypersign.id/) and navigate to: **Developer Hub → API Keys**
 
 Generate a new **KYC API Secret** and securely store it in your application's environment variables.
 
@@ -57,8 +53,6 @@ KYC_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
 
 > **Important:** Never expose your `KYC_API_SECRET` in client-side applications (Web, Android, or iOS). It should only be used from your trusted backend or server environment.
 
-
-
 ## Step 2: Generate an Access Token
 
 Exchange the `KYC_API_SECRET` for an Access Token by calling the following endpoint.
@@ -66,7 +60,7 @@ Exchange the `KYC_API_SECRET` for an Access Token by calling the following endpo
 ### Request
 
 ```http
-POST ${DEVELOPER_DASHBOARD_SERVICE_BASE_URL}/api/v1/app/oauth?grant_type=access_service_kyc
+POST https://api.entity.dashboard.hypersign.id/api/v1/app/oauth?grant_type=access_service_kyc
 ```
 
 ### Request Headers
