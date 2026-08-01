@@ -319,7 +319,7 @@ The Aadhaar photograph can be obtained from either:
 ---
 
 
-## Aadhaar Data Returned Through API 
+# Aadhaar Data Returned Through API 
 
 | Field | Type | Description |
 |------|------|-------------|
@@ -616,6 +616,8 @@ The API will return only:
 - `name`
 - `dob`
 - `referenceId`
+
+You can choose fields from Aadhaar Data.
 
 ### Response Format
 
