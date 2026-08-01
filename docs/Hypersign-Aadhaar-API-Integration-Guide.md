@@ -1,24 +1,21 @@
 # Hypersign Aadhaar Verification API Integration Guide
 
-> Version: 1.0  
-> Audience: Backend Engineers, Mobile Developers, Web Developers  
-> Product: Hypersign Compliant Aadhaar Verification APIs
-
----
-
 # Overview
 
-The Hypersign Aadhaar Verification APIs enable applications to perform UIDAI-compliant Aadhaar verification through multiple verification methods depending on business requirements.
+Hypersign's **Compliant Aadhaar Verification APIs** enable organizations to securely verify an individual's Aadhaar identity while supporting modern privacy and compliance requirements.
 
-The APIs support:
+The platform provides multiple verification methods that can be used independently or combined to achieve the desired level of identity assurance:
 
-- Aadhaar OTP Verification
-- Aadhaar Secure QR Verification
-- Aadhaar Face Match (Biometric Verification)
+- **Aadhaar OTP Verification** – Verify an individual's Aadhaar using the OTP sent to their Aadhaar-linked mobile number.
+- **Aadhaar Secure QR Verification** – Verify the authenticity of an Aadhaar card by validating the UIDAI-issued digital signature embedded in the Secure QR Code and extract the verified Aadhaar details.
+- **Aadhaar Face Match** – Perform biometric verification by comparing a live selfie with the Aadhaar photograph to confirm that the person presenting the Aadhaar is its legitimate holder.
+- **Selective Disclosure** – Request only the Aadhaar attributes required for your business purpose, reducing unnecessary personal data processing while receiving cryptographically verifiable proof of the disclosed information.
 
-These APIs can be combined to build different onboarding journeys depending on the level of identity assurance required.
+These APIs can be combined to support different onboarding and verification journeys based on your application's security, compliance, and user experience requirements.
 
----
+Whether you are building a banking application, digital onboarding platform, employee verification system, or customer KYC workflow, Hypersign enables you to implement Aadhaar verification with **Privacy by Design**, **data minimization**, and **cryptographic verifiability** from day one.
+
+--- 
 
 # Supported Verification Flows
 
