@@ -365,73 +365,165 @@ POST /api/v1/aadhaar/face/match
 
 ## OTP + Face Match
 
-```
-POST /aadhaar/otp/generate
+```mermaid
+sequenceDiagram
+    autonumber
 
-↓
+    participant User
+    participant Client as Client Application
+    participant Hypersign as Hypersign API
+    participant UIDAI
+    participant Face as Face Match Engine
 
-POST /aadhaar/otp/verify
+    User->>Client: Enter Aadhaar Number
 
-↓
+    Client->>Hypersign: POST /api/v1/aadhaar/otp/generate
+    Note right of Client: aadhaar_number, reason
 
-Receive Aadhaar Photo
+    Hypersign->>UIDAI: Generate OTP
+    UIDAI-->>Hypersign: OTP Generated
+    UIDAI-->>User: Send OTP to Registered Mobile
 
-↓
+    Hypersign-->>Client: success, ref_id
 
-Capture Selfie
+    User->>Client: Enter OTP
 
-↓
+    Client->>Hypersign: POST /api/v1/aadhaar/otp/verify
+    Note right of Client: ref_id, otp
 
-POST /aadhaar/face/match
+    Hypersign->>UIDAI: Verify OTP
+    UIDAI-->>Hypersign: Aadhaar Verified + Aadhaar Data
 
-↓
+    Hypersign-->>Client: Aadhaar Details + jpegImage
 
-Verification Complete
+    User->>Client: Capture Live Selfie
+
+    Client->>Hypersign: POST /api/v1/aadhaar/face/match
+    Note right of Client: face1 = Aadhaar Photo\nface2 = Live Selfie
+
+    Hypersign->>Face: Compare Faces
+    Face-->>Hypersign: Similarity Score + Verification Result
+
+    Hypersign-->>Client: verified, userImageScore
+
+    Client-->>User: Identity Verification Complete
 ```
 
 ---
 
 ## QR + Face Match
+```mermaid
+sequenceDiagram
+    autonumber
 
-```
-Client scans Aadhaar QR
+    participant User
+    participant Client as Client Application
+    participant Hypersign as Hypersign API
+    participant Face as Face Match Engine
 
-↓
+    User->>Client: Scan Aadhaar Secure QR Code
 
-POST /aadhaar/qr/verify
+    Client->>Client: Extract QR String
 
-↓
+    Client->>Hypersign: POST /api/v1/aadhaar/qr/verify
+    Note right of Client: qrString
 
-Receive Aadhaar Photo
+    Hypersign->>Hypersign: Verify UIDAI Digital Signature
+    Hypersign->>Hypersign: Extract Aadhaar Data & Photograph
 
-↓
+    Hypersign-->>Client: Aadhaar Details + jpegImage
 
-Capture Selfie
+    User->>Client: Capture Live Selfie
 
-↓
+    Client->>Hypersign: POST /api/v1/aadhaar/face/match
+    Note right of Client: face1 = Aadhaar Photo\nface2 = Live Selfie
 
-POST /aadhaar/face/match
+    Hypersign->>Face: Compare Faces
+    Face-->>Hypersign: Similarity Score + Verification Result
 
-↓
+    Hypersign-->>Client: verified, userImageScore
 
-Verification Complete
+    Client-->>User: Identity Verification Complete
 ```
 
 ---
 
 ## OTP Only
 
+```mermaid
+sequenceDiagram
+    autonumber
+
+    participant User
+    participant Client as Client Application
+    participant Hypersign as Hypersign API
+    participant UIDAI
+
+    User->>Client: Enter Aadhaar Number
+
+    Client->>Hypersign: POST /api/v1/aadhaar/otp/generate
+    Note right of Client: aadhaar_number, reason
+
+    Hypersign->>UIDAI: Generate OTP
+    UIDAI-->>Hypersign: OTP Generated
+    UIDAI-->>User: Send OTP to Registered Mobile
+
+    Hypersign-->>Client: success, ref_id
+
+    User->>Client: Enter OTP
+
+    Client->>Hypersign: POST /api/v1/aadhaar/otp/verify
+    Note right of Client: ref_id, otp
+
+    Hypersign->>UIDAI: Verify OTP
+    UIDAI-->>Hypersign: Aadhaar Verified + Aadhaar Data
+
+    Hypersign-->>Client: Aadhaar Verification Result
+
+    Client-->>User: Verification Complete
 ```
-POST /aadhaar/otp/generate
 
-↓
+--- 
 
-POST /aadhaar/otp/verify
+## Choosing the Right Verification Flow
 
-↓
+The choice of verification flow depends on the level of identity assurance your application requires.
 
-Verification Complete
-```
+| Capability | Aadhaar Verification + Face Match (OTP + Face Match / QR + Face Match) | Aadhaar Verification Only (OTP) |
+|------------|:------------------------------------------------------------------------:|:-------------------------------:|
+| Verifies Aadhaar Information | ✅ | ✅ |
+| Verifies the Person is the Aadhaar Holder | ✅ | ❌ |
+| Biometric Face Verification | ✅ | ❌ |
+| Helps Prevent Identity Fraud | ✅ | ❌ |
+| Higher Identity Assurance | ✅ | ⚠️ Limited |
+| Recommended For | Banking, Financial Services, Insurance, High-value Transactions, Digital Onboarding | Low-risk onboarding, Basic KYC, Mobile Number Verification |
+
+
+> **Why add Face Match?**
+>
+> OTP verification confirms that the user has access to the mobile number linked to the Aadhaar. However, it does **not** confirm that the person entering the OTP is the actual Aadhaar holder.
+>
+> Face Match adds a biometric verification step by comparing the Aadhaar photograph with a live selfie, providing a much higher level of confidence that the individual being onboarded is the legitimate Aadhaar holder.
+
+### Recommended Verification Flow by Use Case
+
+
+| Use Case | Recommended Flow |
+|----------|------------------|
+| Banking & Financial Services | Aadhaar Verification + Face Match |
+| NBFC Loan Onboarding | Aadhaar Verification + Face Match |
+| Insurance KYC | Aadhaar Verification + Face Match |
+| Securities & Investment Account Opening | Aadhaar Verification + Face Match |
+| Digital Customer Onboarding | Aadhaar Verification + Face Match |
+| High-value Transactions | Aadhaar Verification + Face Match |
+| Employee Verification | Aadhaar Verification + Face Match |
+| Telecom SIM Verification | Aadhaar Verification Only* |
+| Low-risk Customer Onboarding | Aadhaar Verification Only |
+| Basic Identity Verification | Aadhaar Verification Only |
+| Mobile Number Verification | Aadhaar Verification Only |
+
+
+> **Note:** *If stronger identity assurance or fraud prevention is required, Face Match can be added to the Aadhaar verification flow.*
 
 ---
 
@@ -474,18 +566,7 @@ Verification Complete
 - Retry only idempotent requests where applicable.
 - Store only the information permitted under applicable UIDAI regulations and your organization's compliance policies.
 
----
-
-# Integration Decision Matrix
-
-| Requirement | OTP | QR | Face Match |
-|------------|-----|----|------------|
-| Aadhaar verification | ✅ | ✅ | — |
-| Verify Aadhaar authenticity | ✅ | ✅ | — |
-| Offline Aadhaar verification | ❌ | ✅ | — |
-| Mobile number verification | ✅ | ❌ | — |
-| Biometric verification | Optional | Optional | ✅ |
-
+ 
 ---
 
 # Need Help?
