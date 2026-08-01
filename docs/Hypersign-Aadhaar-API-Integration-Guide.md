@@ -22,7 +22,7 @@ These APIs can be combined to build different onboarding journeys depending on t
 
 # Supported Verification Flows
 
-![img](/docs/assets/aadhaar-api/6d2d6235-e1bb-4b15-b36a-354afe02bb8b.png)
+![img](/docs/assets/aadhaar-api/a2ee4fb9-1e6e-4322-8dab-0abbca0d5336.png)
 
 
 # Base URL
@@ -57,24 +57,9 @@ Content-Type: application/json
 
 Generates an OTP on the mobile number linked with the Aadhaar number.
 
-## Endpoint
+## POST /api/v1/aadhaar/otp/generate
 
-```
-POST /api/v1/aadhaar/otp/generate
-```
-
----
-
-## Request Headers
-
-| Header | Required |
-|---------|-----------|
-| Authorization | Yes |
-| Content-Type | Yes |
-
----
-
-## Request Body
+### Request Body
 ```json
 {
   "aadhaar_number": "111122223333",
@@ -89,7 +74,7 @@ POST /api/v1/aadhaar/otp/generate
 
 ---
 
-## Successful Response
+### Successful Response
 
 ```json
 {
@@ -111,7 +96,7 @@ POST /api/v1/aadhaar/otp/generate
 
 ---
 
-## Error Response
+### Error Response
 
 ```json
 {
@@ -133,15 +118,10 @@ Verifies the OTP entered by the user and returns the verified Aadhaar details ob
 > Invoke this API after successfully generating an OTP using the **Generate Aadhaar OTP API**.
 
 
-## Endpoint
+## POST /api/v1/aadhaar/otp/verify
 
-```
-POST /api/v1/aadhaar/otp/verify
-```
 
----
-
-## Request Body
+### Request Body
 
 ```json
 {
@@ -155,9 +135,9 @@ POST /api/v1/aadhaar/otp/verify
 | `otp` | string | Yes | 6-digit OTP received on the Aadhaar-linked mobile number. **For sandbox/development mode, use `111111`.** |
  
 
----
 
-## Successful Response
+
+### Successful Response
 
 Example
 
@@ -205,15 +185,9 @@ Unlike a standard QR code scanner, this API performs **cryptographic signature v
 > **When to use:**  
 > Use this API when the user presents a physical or digital Aadhaar card containing a Secure QR Code. This API provides an offline Aadhaar verification mechanism without requiring OTP authentication.
 
-## Endpoint
+## POST /api/v1/aadhaar/qr/verify
 
-```
-POST /api/v1/aadhaar/qr/verify
-```
-
----
-
-## Request Body
+### Request Body
 
 ```json
 {
@@ -226,7 +200,7 @@ POST /api/v1/aadhaar/qr/verify
 | `qrString` | string | Yes | The Aadhaar Secure QR Code content extracted by the client application after scanning the Aadhaar card. The complete QR string should be passed without modification. |
 
 
-## What Happens Internally
+### What Happens Internally
 
 Hypersign
 
@@ -236,9 +210,7 @@ Hypersign
 - extracts Aadhaar photograph
 - returns verified data
 
----
-
-## Successful Response
+### Successful Response
 
 ```json
 {
@@ -288,17 +260,10 @@ The Aadhaar photograph can be obtained from either:
 > **When to use:**  
 > Use this API when biometric verification is required in addition to Aadhaar verification. This API helps confirm that the person presenting the Aadhaar document is the legitimate Aadhaar holder.
 
----
 
-## Endpoint
+## POST /api/v1/aadhaar/face/match
 
-```
-POST /api/v1/aadhaar/face/match
-```
-
----
-
-## Request Body
+### Request Body
 
 ```json
 {
@@ -313,9 +278,7 @@ POST /api/v1/aadhaar/face/match
 | `face2` | string | Yes | Base64-encoded live selfie captured by the client application. The image must include the appropriate Data URI prefix (for example, `data:image/jpeg;base64,`). |
 
 
----
-
-## Successful Response
+### Successful Response
 
 ```json
 {
@@ -336,7 +299,26 @@ POST /api/v1/aadhaar/face/match
 | `data.verified` | boolean | Indicates whether the similarity score meets the configured verification threshold. |
 
 
+
+
+--- 
+
+# Common HTTP Status Codes
+
+| Status | Meaning |
+|---------|---------|
+| 200 | Success |
+| 400 | Invalid Request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Resource Not Found |
+| 422 | Validation Failed |
+| 429 | Rate Limit Exceeded |
+| 500 | Internal Server Error |
+
 ---
+
+
 ## Aadhaar Data Returned Through API 
 
 | Field | Type | Description |
@@ -485,7 +467,7 @@ sequenceDiagram
 
 --- 
 
-## Choosing the Right Verification Flow
+# Choosing the Right Verification Flow
 
 The choice of verification flow depends on the level of identity assurance your application requires.
 
@@ -505,7 +487,7 @@ The choice of verification flow depends on the level of identity assurance your 
 >
 > Face Match adds a biometric verification step by comparing the Aadhaar photograph with a live selfie, providing a much higher level of confidence that the individual being onboarded is the legitimate Aadhaar holder.
 
-### Recommended Verification Flow by Use Case
+## Recommended Verification Flow by Use Case
 
 
 | Use Case | Recommended Flow |
@@ -524,35 +506,6 @@ The choice of verification flow depends on the level of identity assurance your 
 
 
 > **Note:** *If stronger identity assurance or fraud prevention is required, Face Match can be added to the Aadhaar verification flow.*
-
----
-
-# Common HTTP Status Codes
-
-| Status | Meaning |
-|---------|---------|
-| 200 | Success |
-| 400 | Invalid Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Resource Not Found |
-| 422 | Validation Failed |
-| 429 | Rate Limit Exceeded |
-| 500 | Internal Server Error |
-
----
-
-# Error Response Format
-
-```json
-{
-    "success": false,
-    "error": {
-        "code": "INVALID_OTP",
-        "message": "OTP is invalid or expired"
-    }
-}
-```
 
 ---
 
