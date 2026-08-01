@@ -390,8 +390,7 @@ sequenceDiagram
 
     Client-->>User: Identity Verification Complete
 ```
-
----
+ 
 
 ## QR + Face Match
 ```mermaid
@@ -427,8 +426,6 @@ sequenceDiagram
 
     Client-->>User: Identity Verification Complete
 ```
-
----
 
 ## OTP Only
 
@@ -528,19 +525,19 @@ Modern privacy regulations, including India's **Digital Personal Data Protection
 
 Hypersign helps you implement this **Privacy by Design** approach from day one through **Selective Disclosure**.
 
-> What is Selective Disclosure?
-Selective Disclosure is a privacy-preserving mechanism that allows a verifier to request **only the Aadhaar attributes required for a specific business purpose**, instead of receiving the complete Aadhaar record. Instead of disclosing all available Aadhaar information, the API returns only the fields requested by your application.
-For example, if your application only requires:
-- Name
-- Date of Birth
-- Reference ID
-the response will contain only those attributes.
+> **What is Selective Disclosure?**
+> Selective Disclosure is a privacy-preserving mechanism that allows a verifier to request **only the Aadhaar > attributes required for a specific business purpose**, instead of receiving the complete Aadhaar record. Instead > of disclosing all available Aadhaar information, the API returns only the fields requested by your application.
+> For example, if your application only requires:
+> - Name
+> - Date of Birth
+> - Reference ID
+> the response will contain only those attributes.
 
-> How does Selective Disclosure helps organizations?
-- Reduce personal data processing
-- Follow the principle of data minimization
-- Lower compliance and privacy risks
-- Build privacy-first applications
+> **How does Selective Disclosure helps organizations?**
+> - Reduce personal data processing
+> - Follow the principle of data minimization
+> - Lower compliance and privacy risks
+> - Build privacy-first applications
 
 ## Using Selective Disclosure
 
