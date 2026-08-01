@@ -509,6 +509,215 @@ The choice of verification flow depends on the level of identity assurance your 
 
 ---
 
+# Privacy by Design with Selective Disclosure
+
+## Why Request Only the Data You Need?
+
+Many applications do not require the complete Aadhaar record to perform their business function.
+
+For example:
+
+- An age-gated service may only need the user's **date of birth**.
+- A customer onboarding flow may only require the **name** and **reference ID**.
+- A logistics application may only need the **name** and **address**.
+- An employee verification portal may only require the **name** and **photograph**.
+
+Requesting the complete Aadhaar dataset when only a few attributes are required increases the amount of personal data processed by your application.
+
+Modern privacy regulations, including India's **Digital Personal Data Protection (DPDP) Act**, encourage organizations to collect and process only the personal data necessary for a specific purpose. Reducing the amount of personal data handled by your application lowers privacy risk, simplifies compliance, and limits unnecessary exposure of sensitive information.
+
+Hypersign helps you implement this **Privacy by Design** approach from day one through **Selective Disclosure**.
+
+> What is Selective Disclosure?
+Selective Disclosure is a privacy-preserving mechanism that allows a verifier to request **only the Aadhaar attributes required for a specific business purpose**, instead of receiving the complete Aadhaar record. Instead of disclosing all available Aadhaar information, the API returns only the fields requested by your application.
+For example, if your application only requires:
+- Name
+- Date of Birth
+- Reference ID
+the response will contain only those attributes.
+
+> How does Selective Disclosure helps organizations?
+- Reduce personal data processing
+- Follow the principle of data minimization
+- Lower compliance and privacy risks
+- Build privacy-first applications
+
+## Using Selective Disclosure
+
+Selective Disclosure is supported by both Aadhaar verification APIs:
+
+- `POST /api/v1/aadhaar/otp/verify`
+- `POST /api/v1/aadhaar/qr/verify`
+
+To request only specific Aadhaar attributes, include an additional `QueryRequest` object in the request body.
+
+### Request Format
+
+```json
+{
+  "... existing request fields ...",
+
+  "QueryRequest": {
+    "query": [
+      {
+        "type": "QueryByFrame",
+        "credentialQuery": {
+          "frame": {
+            "@context": [
+              "https://www.w3.org/2018/credentials/v1",
+              "https://w3id.org/citizenship/v1",
+              "https://w3id.org/security/bbs/v1"
+            ],
+            "type": [
+              "VerifiableCredential",
+              "AadhaarCardCredential"
+            ],
+            "issuer": {},
+            "issuanceDate": {},
+            "credentialSubject": {
+              "@explicit": true,
+              "type": [
+                "AadhaarCard",
+                "Person"
+              ],
+              "referenceId": {},
+              "name": {},
+              "dob": {}
+            }
+          }
+        }
+      }
+    ],
+    "domain": "verifier.example.com", // verifier domain name
+    "challenge": "99612b24-63a9-11ea-b99f-4f66f3e4f81a" // challenge can be generated and stored on your server
+  }
+}
+```
+
+The requested Aadhaar attributes are specified inside the `credentialSubject` object. To request an attribute, include its field name with an empty object (`{}`).
+
+For example:
+
+```json
+"credentialSubject": {
+  "@explicit": true,
+  "type": [
+    "AadhaarCard",
+    "Person"
+  ],
+  "name": {},
+  "dob": {},
+  "referenceId": {}
+}
+```
+
+The API will return only:
+
+- `name`
+- `dob`
+- `referenceId`
+
+### Response Format
+
+When **Selective Disclosure** is used, the response format differs from the standard Aadhaar verification response.
+
+Instead of returning the complete `aadhaarData` object, the API returns a **W3C Verifiable Presentation (VP)** containing only the attributes requested in the `QueryRequest`.
+
+#### Example Response
+
+```json
+{
+  "success": true,
+  "message": "success",
+  "data": {
+    "verified": true,
+    "presentation": {
+      "...": "Verifiable Presentation"
+    }
+  }
+}
+```
+
+The `presentation` contains:
+
+- A **Verifiable Presentation**
+- One or more **Verifiable Credentials**
+- Only the Aadhaar attributes requested in the `credentialSubject` frame
+- Cryptographic proofs proving the authenticity and integrity of the disclosed information
+
+The returned `presentation` follows the **W3C Verifiable Credentials** specification and contains:
+
+| Property | Description |
+|----------|-------------|
+| `holder` | DID of the Aadhaar holder presenting the credential. |
+| `verifiableCredential` | Contains the selectively disclosed Aadhaar attributes. |
+| `credentialSubject` | Contains only the requested Aadhaar fields. |
+| `proof` | Cryptographic proof demonstrating that the disclosed attributes originate from a valid Aadhaar credential and have not been tampered with. |
+
+Sample Response where the verifier only requested name and dob: 
+
+```
+{
+  "success": true,
+  "message": "success",
+  "data": {
+    "verified": true,
+    "presentation": {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/citizenship/v1",
+        "https://w3id.org/security/bbs/v1"
+      ],
+      "type": "VerifiablePresentation",
+      "holder": "did:hid:z6MkwK7q57hdxE1hp3KR93W3Gd68x4Fc6G4Wp3SVSYqZqahS",
+      "verifiableCredential": [
+        {
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/citizenship/v1",
+            "https://w3id.org/security/bbs/v1"
+          ],
+          "id": "vc:hid:testnet:zkFzFSjfY1zNei6UD6SSRcDyPskh6DDJ6xrEsbuojt2fehBu48",
+          "type": [
+            "AadhaarCardCredential",
+            "VerifiableCredential"
+          ],
+          "credentialSubject": {
+            "id": "did:hid:z6MkwK7q57hdxE1hp3KR93W3Gd68x4Fc6G4Wp3SVSYqZqahS",
+            "type": [
+              "Person",
+              "AadhaarCard"
+            ],
+            "dob": "09-06-1998",
+            "name": "Amrita Kumari",
+          },
+          "issuanceDate": "2026-07-07T01:29:40.250Z",
+          "issuer": "did:hid:z6MkmYYZ8iquQVoCVtjZYC4YT4Q3rS8ad8S69Fho6SBKRXZD",
+          "proof": {
+            "type": "BbsBlsSignatureProof2020",
+            "created": "2026-07-07T01:29:40Z",
+            "nonce": "LmztbVCHaHYgol73+4NXwoAPjUoham6LG6OyA2/o2HmvyiCMoObtKmYZdILMGWKDZPc=",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "ABkB8DMvl5xbPGF+UqtA......aCj7hlMrAc5bR0kb2xxEFccH",
+            "verificationMethod": "did:hid:z6MkmYYZ8iquQVoCVtjZYC4YT4Q3rS8ad8S69Fho6SBKRXZD#key-3"
+          }
+        }
+      ],
+      "proof": {
+        "type": "BbsBlsSignature2020",
+        "created": "2026-07-07T01:29:40Z",
+        "challenge": "99612b24-63a9-11ea-b99f-4f66f3e4f81a",
+        "domain": "verifier.example.com",
+        "proofPurpose": "authentication",
+        "proofValue": "laTiLAE11kDzYMFBU3ZVnv...BkG7KYma9urLMBCo4x5JoTWPaG1p7URXapIpy1ng+avITVXJin9XQoxPxyNA==",
+        "verificationMethod": "did:hid:z6MkwK7q57hdxE1hp3KR93W3Gd68x4Fc6G4Wp3SVSYqZqahS#key-3"
+      }
+    }
+  }
+}
+```
+
+
 # Best Practices
 
 - Always perform Face Match immediately after successful Aadhaar verification.
@@ -518,6 +727,7 @@ The choice of verification flow depends on the level of identity assurance your 
 - Handle OTP expiry gracefully by allowing users to regenerate OTP.
 - Retry only idempotent requests where applicable.
 - Store only the information permitted under applicable UIDAI regulations and your organization's compliance policies.
+- Use Selective Discloure mode as much as possible
 
  
 ---
