@@ -419,6 +419,8 @@ function handleKycErrorStates(code) {
 
 To consume async confirmation messages emitted by the Hypersign verification services engine, map a public endpoint inside your backend router.
 
+> Note: Webhooks are now sent for both successful verification completion and failed verification attempts. Your endpoint should handle both cases.
+
 ```
 +--------------------------------+              +-------------------------+
 | Hypersign Verification Service |              |  Your Application Host  |
@@ -440,38 +442,79 @@ Webhooks work via a **Fire-and-Forget** architectural notification strategy. Whe
 
 #### Expected Webhook Payload Structure
 
+The webhook can be triggered for both successful verification and failure scenarios.
+
+##### Success webhook payload
+
 ```json
 {
-   "idToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-   "sessionId": "8814e6d0-1f5f-458b-8b58-fe413de19774"
+  "sessionId": "8814e6d0-1f5f-458b-8b58-fe413de19774",
+  "success": true,
+  "environment": "dev",
+  "idToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-
 ```
+
+##### Failure webhook payload
+
+```json
+{
+  "sessionId": "8814e6d0-1f5f-458b-8b58-fe413de19774",
+  "success": false,
+  "environment": "dev",
+  "data": {
+    "stepName": "ocrIdDoc",
+    "status": "fail",
+    "errorCode": 1,
+    "error": "Faces does not match",
+    "createdAt": "2026-07-15T08:25:38.221Z"
+  }
+}
+```
+
+##### Failure payload fields
+
+- `stepName`: Specifies the verification step that failed during processing. Accepted values are `liveliness`, `ocrIdDoc`, `zkProofVerification`, and `mintSBT`.
+- `status`: Always `fail` for failure webhooks.
+- `errorCode`: Numeric error code returned by the verification service.
+- `error`: Human-readable reason for the failure.
+- `createdAt`: Timestamp when the failure was recorded.
+
+> The `idToken` is only returned for successful verification events. For failed verification events, the response includes a data object containing structured details about the failed verification step and the associated error.
+
 
 ### Step 3: Listening to webhook to received idToken
 
-Once verification is complete, Hypersign sends a webhook notification to your configured endpoint.
+Once verification completes or fails, Hypersign sends a webhook notification to your configured endpoint.
 
 Your webhook handler should:
 
-1. Extract the idToken from the webhook payload.
-2. Store or process the idToken for the next step.
+1. Inspect the `success` flag in the payload.
+2. If the verification succeeded, extract the `idToken` and store or process it for the next step.
+3. If the verification failed, read the `data` object to capture the failure details such as `stepName`, `errorCode`, and `error`.
 
 ```javascript
-
 app.post('/api/v1/webhook/kyc', async (req, res) => {
     try {
-        const { idToken, sessionId } = req.body;
-        
+        const { idToken, sessionId, success, data } = req.body;
+
         // Return 200 immediately to prevent timing timeouts on Hypersign framework
         res.status(200).json({ received: true });
-        // Store or process the idToken for the next step
-        console.log("Received idToken:", idToken);
+
+        if (success === false && data) {
+            console.log('Verification failed for session:', sessionId, data);
+            // Store failure details in your database or notify your system
+            return;
+        }
+
+        if (idToken) {
+            // Store or process the idToken for the next step
+            console.log('Received idToken:', idToken);
+        }
     } catch (webhookProcessingError) {
-        console.error(`[Webhook Process Processing Error Event]:`, webhookProcessingError);
+        console.error('[Webhook Process Processing Error Event]:', webhookProcessingError);
     }
 });
-
 ```
 ### Step 4 (Optional): Check consent status when a webhook is unavailable
 
