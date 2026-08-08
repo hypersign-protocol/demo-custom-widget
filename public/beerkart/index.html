@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeerKart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #f7ead2;
+            --muted: #b9ac99;
+            --line: rgba(245, 220, 172, 0.18);
+            --paper: #15110c;
+            --panel: #1f1811;
+            --panel-soft: #281f16;
+            --amber: #d99121;
+            --amber-dark: #9a5b12;
+            --green: #66b889;
+            --red: #e27970;
+            --blue: #78a7d7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 18% 10%, rgba(217, 145, 33, 0.16), transparent 26%),
+                radial-gradient(circle at 78% 18%, rgba(91, 113, 45, 0.12), transparent 24%),
+                linear-gradient(180deg, #030302 0%, #080706 48%, #100c08 100%);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        .text-secondary {
+            color: var(--muted) !important;
+        }
+
+        .text-primary {
+            color: #efb653 !important;
+        }
+
+        .btn-primary,
+        .btn-dark {
+            background: var(--amber);
+            border-color: var(--amber);
+            color: #17100b;
+            font-weight: 700;
+        }
+
+        .btn-primary:hover,
+        .btn-dark:hover {
+            background: #f0aa3c;
+            border-color: #f0aa3c;
+            color: #17100b;
+        }
+
+        .btn-outline-secondary {
+            border-color: rgba(247, 234, 210, 0.32);
+            color: var(--ink);
+        }
+
+        .btn-outline-secondary:hover {
+            background: rgba(247, 234, 210, 0.1);
+            border-color: rgba(247, 234, 210, 0.5);
+            color: #fff8ea;
+        }
+
+        .btn-success {
+            background: var(--green);
+            border-color: var(--green);
+            color: #07110b;
+            font-weight: 700;
+        }
+
+        .form-control {
+            background: #100d0a;
+            border-color: rgba(247, 234, 210, 0.22);
+            color: var(--ink);
+        }
+
+        .form-control:focus {
+            background: #100d0a;
+            border-color: var(--amber);
+            box-shadow: 0 0 0 0.25rem rgba(217, 145, 33, 0.18);
+            color: var(--ink);
+        }
+
+        .form-control::placeholder {
+            color: rgba(247, 234, 210, 0.42);
+        }
+
+        .border-top {
+            border-color: var(--line) !important;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.68;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .shop-shell {
+            max-width: 1180px;
+        }
+
+        .topbar {
+            align-items: center;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            padding: 24px 0;
+        }
+
+        .brand-lockup {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            background: #080706;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            display: block;
+            height: 58px;
+            object-fit: contain;
+            padding: 4px;
+            width: 58px;
+        }
+
+        .hero-band {
+            align-items: stretch;
+            display: grid;
+            gap: 22px;
+            grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+            margin-bottom: 24px;
+        }
+
+        .hero-copy {
+            align-content: center;
+            min-height: 260px;
+        }
+
+        .hero-copy h1 {
+            font-size: clamp(2rem, 4vw, 4.35rem);
+            font-weight: 800;
+            letter-spacing: 0;
+            line-height: 0.95;
+        }
+
+        .hero-copy p {
+            color: var(--muted);
+            font-size: 1.08rem;
+            max-width: 620px;
+        }
+
+        .hero-banner {
+            border-radius: 8px;
+            min-height: 260px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hero-banner::after {
+            background:
+                linear-gradient(90deg, #080706 0%, rgba(8, 7, 6, 0.18) 22%, rgba(8, 7, 6, 0) 48%),
+                radial-gradient(circle at center, rgba(8, 7, 6, 0) 46%, rgba(8, 7, 6, 0.72) 100%);
+            content: "";
+            inset: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .hero-banner img {
+            display: block;
+            height: 100%;
+            min-height: 260px;
+            object-fit: cover;
+            object-position: center;
+            opacity: 0.92;
+            width: 100%;
+        }
+
+        .cart-summary,
+        .checkout-panel,
+        .order-panel,
+        .beer-card {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+        }
+
+        .shop-grid {
+            align-items: start;
+            display: grid;
+            gap: 24px;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .catalog-heading {
+            align-items: end;
+            display: flex;
+            gap: 18px;
+            justify-content: space-between;
+            min-height: 74px;
+            padding: 0 0 16px;
+        }
+
+        .catalog-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .beer-card {
+            display: grid;
+            gap: 14px;
+            padding: 18px;
+        }
+
+        .beer-art {
+            background: #0b0907;
+            border: 1px solid rgba(247, 234, 210, 0.1);
+            border-radius: 8px;
+            height: 168px;
+            overflow: hidden;
+        }
+
+        .beer-art img {
+            display: block;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            width: 100%;
+        }
+
+        .beer-meta {
+            color: var(--muted);
+            font-size: 0.92rem;
+            min-height: 44px;
+        }
+
+        .price {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .cart-summary {
+            padding: 18px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .cart-line {
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            display: grid;
+            gap: 10px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            padding: 12px 0;
+        }
+
+        .qty-controls {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            align-items: center;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #100d0a;
+            color: var(--ink);
+            display: inline-flex;
+            height: 34px;
+            justify-content: center;
+            width: 34px;
+        }
+
+        .stepper {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-bottom: 18px;
+        }
+
+        .step-pill {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 10px 12px;
+            text-align: center;
+        }
+
+        .step-pill.active {
+            background: var(--amber);
+            border-color: var(--amber);
+            color: #17100b;
+        }
+
+        .step-pill.done {
+            background: rgba(47, 125, 88, 0.12);
+            border-color: rgba(47, 125, 88, 0.35);
+            color: var(--green);
+        }
+
+        .checkout-panel,
+        .order-panel {
+            padding: 22px;
+        }
+
+        .status-box {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--muted);
+            min-height: 48px;
+            padding: 12px;
+        }
+
+        .status-box.success {
+            background: rgba(47, 125, 88, 0.1);
+            border-color: rgba(47, 125, 88, 0.35);
+            color: var(--green);
+        }
+
+        .status-box.error {
+            background: rgba(173, 63, 63, 0.1);
+            border-color: rgba(173, 63, 63, 0.35);
+            color: var(--red);
+        }
+
+        .widget-panel {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .widget-panel-header {
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+        }
+
+        .widget-frame-wrap {
+            background: #090806;
+            height: min(760px, calc(100vh - 180px));
+            min-height: 620px;
+        }
+
+        .widget-frame {
+            border: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        .widget-placeholder {
+            align-items: center;
+            background: linear-gradient(135deg, rgba(217, 145, 33, 0.14), rgba(8, 7, 6, 0.88));
+            color: var(--muted);
+            display: flex;
+            font-weight: 600;
+            height: 100%;
+            justify-content: center;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .button-loader {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .button-loader::before {
+            animation: spin 0.8s linear infinite;
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            border-radius: 50%;
+            border-top-color: #fff;
+            content: "";
+            height: 14px;
+            width: 14px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 991px) {
+            .hero-band,
+            .checkout-layout,
+            .shop-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .catalog-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .cart-summary {
+                position: static;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .catalog-grid,
+            .stepper {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-copy {
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container shop-shell pb-5">
+        <header class="topbar">
+            <div class="brand-lockup">
+                <img class="brand-logo" src="assets/logo-beerkart.png" alt="BeerKart">
+                <div>
+                    <h1 class="h4 mb-0">BeerKart</h1>
+                </div>
+            </div>
+            <button id="header-cart-btn" class="btn btn-dark" type="button">Cart (0)</button>
+        </header>
+
+        <section id="catalog-view">
+            <div class="hero-band">
+                <div class="hero-copy">
+                    <h1>Craft beer, cold cart.</h1>
+                    <p class="mt-3 mb-0">Your Beer. Your Way.</p>
+                </div>
+                <div class="hero-banner">
+                    <img src="assets/banner.png" alt="BeerKart beer selection">
+                </div>
+            </div>
+
+            <div class="shop-grid">
+                <div>
+                    <div class="catalog-heading">
+                        <div>
+                            <h2 class="h4 mb-1">Beer catalog</h2>
+                            <p class="text-secondary mb-0">Six-packs, bottles, and cans for this demo checkout.</p>
+                        </div>
+                    </div>
+                    <div id="catalog-grid" class="catalog-grid"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="checkout-view" class="hidden">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-4">
+                <div>
+                    <p class="text-uppercase text-primary fw-semibold small mb-2">Checkout</p>
+                    <h2 class="h3 mb-0">Complete your order</h2>
+                </div>
+                <button id="back-to-shop-btn" class="btn btn-outline-secondary" type="button">Back to catalog</button>
+            </div>
+
+            <div class="row g-4 align-items-start">
+                <div class="col-12 col-lg-8">
+                    <section class="checkout-panel">
+                        <div class="stepper" aria-label="Checkout progress">
+                            <div id="step-basic-pill" class="step-pill active">1. Basic Detail</div>
+                            <div id="step-age-pill" class="step-pill">2. Age Verification</div>
+                            <div id="step-pay-pill" class="step-pill">3. Payment</div>
+                        </div>
+
+                        <form id="details-form">
+                            <div id="basic-step">
+                                <h3 class="h5 mb-3">Basic Detail</h3>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="checkout-name" class="form-label">Full Name</label>
+                                        <input id="checkout-name" class="form-control" type="text" autocomplete="name" required>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="checkout-email" class="form-label">Email Address</label>
+                                        <input id="checkout-email" class="form-control" type="email" autocomplete="email" required>
+                                    </div>
+                                </div>
+                                <button id="details-submit-btn" class="btn btn-primary mt-3" type="submit">Continue</button>
+                            </div>
+                        </form>
+
+                        <div id="age-step" class="hidden">
+                            <h3 class="h5 mb-3">Age Verification</h3>
+                            <p class="text-secondary mb-3">You must be over 18 years old to buy beer from BeerKart.</p>
+                            <div id="age-status" class="status-box mb-3">Verification session is ready.</div>
+                            <button id="verify-age-btn" class="btn btn-primary" type="button">Verify Your Age</button>
+                            <button id="retry-age-btn" class="btn btn-outline-secondary hidden ms-2" type="button">Reload Widget</button>
+                            <button id="restart-session-btn" class="btn btn-outline-secondary hidden ms-2" type="button">Restart Session</button>
+                        </div>
+
+                        <form id="payment-form" class="hidden">
+                            <h3 class="h5 mb-3">Payment</h3>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="card-name" class="form-label">Name on Card</label>
+                                    <input id="card-name" class="form-control" type="text" autocomplete="cc-name" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="card-number" class="form-label">Card Number</label>
+                                    <input id="card-number" class="form-control" type="text" inputmode="numeric" placeholder="4242 4242 4242 4242" required>
+                                </div>
+                                <div class="col-6">
+                                    <label for="card-expiry" class="form-label">Expiry</label>
+                                    <input id="card-expiry" class="form-control" type="text" placeholder="12/30" required>
+                                </div>
+                                <div class="col-6">
+                                    <label for="card-cvc" class="form-label">CVC</label>
+                                    <input id="card-cvc" class="form-control" type="text" inputmode="numeric" placeholder="123" required>
+                                </div>
+                            </div>
+                            <button id="pay-btn" class="btn btn-success mt-3" type="submit">Pay <span id="pay-total">$0.00</span></button>
+                        </form>
+                    </section>
+                </div>
+
+                <aside class="col-12 col-lg-4">
+                    <section id="age-widget-panel" class="widget-panel hidden" aria-label="Age verification widget">
+                        <div class="widget-panel-header">
+                            <h2 class="h6 mb-0">Hypersign ID</h2>
+                            <span class="text-secondary small">18+ check</span>
+                        </div>
+                        <div id="age-widget-frame-wrap" class="widget-frame-wrap">
+                            <div id="age-widget-placeholder" class="widget-placeholder">Your age check will appear here.</div>
+                            <iframe id="age-widget-frame" class="widget-frame hidden" title="Hypersign ID Widget"
+                                allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"></iframe>
+                        </div>
+                    </section>
+                    <section class="cart-summary" aria-label="Order summary">
+                        <h2 class="h5 mb-3">Order summary</h2>
+                        <div id="checkout-lines"></div>
+                        <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
+                            <span class="fw-semibold">Total</span>
+                            <span id="checkout-total" class="price">$0.00</span>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </section>
+
+        <section id="complete-view" class="order-panel hidden mt-4">
+            <p class="text-uppercase text-success fw-semibold small mb-2">Order placed</p>
+            <h2 class="h3 mb-2">Payment complete</h2>
+            <p id="complete-copy" class="text-secondary mb-4"></p>
+            <button id="new-order-btn" class="btn btn-primary" type="button">Start another order</button>
+        </section>
+    </main>
+
+    <script>
+        const beers = [
+            {
+                id: "citrus-ipa",
+                name: "Citrus Loop IPA",
+                style: "India Pale Ale",
+                note: "Bright hops, orange peel, clean bitter finish.",
+                price: 12.99,
+                image: "assets/prod3.png",
+                artBg: "#ffe1a3",
+                bottle: "#264131",
+                label: "#f4a62a"
+            },
+            {
+                id: "midnight-stout",
+                name: "Midnight Stout",
+                style: "Stout",
+                note: "Roasted malt, cocoa, and a smooth dark body.",
+                price: 14.49,
+                image: "assets/prod1.png",
+                artBg: "#dde3ee",
+                bottle: "#181d24",
+                label: "#486a8e"
+            },
+            {
+                id: "river-pilsner",
+                name: "River Pilsner",
+                style: "Pilsner",
+                note: "Crisp, floral, and built for a clean pour.",
+                price: 10.99,
+                image: "assets/prod2.jpeg",
+                artBg: "#d7efe1",
+                bottle: "#27614d",
+                label: "#e5c94b"
+            },
+            {
+                id: "ruby-sour",
+                name: "Ruby Sour",
+                style: "Sour Ale",
+                note: "Tart berry snap with a dry, sparkling finish.",
+                price: 13.25,
+                image: "assets/prod3.png",
+                artBg: "#f6d8df",
+                bottle: "#533045",
+                label: "#c84d68"
+            },
+            {
+                id: "wheat-cloud",
+                name: "Wheat Cloud",
+                style: "Hefeweizen",
+                note: "Soft wheat, clove, banana, and gentle haze.",
+                price: 11.75,
+                image: "assets/prod1.png",
+                artBg: "#f2e8cb",
+                bottle: "#8b681f",
+                label: "#fff0b5"
+            },
+            {
+                id: "lager-point",
+                name: "Lager Point",
+                style: "Lager",
+                note: "Cold-fermented, balanced, and easy-drinking.",
+                price: 9.99,
+                image: "assets/prod2.jpeg",
+                artBg: "#dce9f3",
+                bottle: "#21475e",
+                label: "#8ab4d6"
+            }
+        ];
+
+        const cart = new Map();
+        const verificationState = {
+            tokens: {
+                kycAdmin: "",
+                ssiAdmin: "",
+                userBearer: ""
+            },
+            sessionId: "",
+            widgetUrl: "https://verify.hypersign.id",
+            widgetActive: false,
+            closeTimer: null,
+            verified: false,
+            customer: {
+                name: "",
+                email: ""
+            }
+        };
+
+        const catalogGrid = document.getElementById("catalog-grid");
+        const checkoutLines = document.getElementById("checkout-lines");
+        const checkoutTotal = document.getElementById("checkout-total");
+        const payTotal = document.getElementById("pay-total");
+        const headerCartBtn = document.getElementById("header-cart-btn");
+        const catalogView = document.getElementById("catalog-view");
+        const checkoutView = document.getElementById("checkout-view");
+        const completeView = document.getElementById("complete-view");
+        const detailsForm = document.getElementById("details-form");
+        const paymentForm = document.getElementById("payment-form");
+        const basicStep = document.getElementById("basic-step");
+        const ageStep = document.getElementById("age-step");
+        const ageStatus = document.getElementById("age-status");
+        const detailsSubmitBtn = document.getElementById("details-submit-btn");
+        const verifyAgeBtn = document.getElementById("verify-age-btn");
+        const retryAgeBtn = document.getElementById("retry-age-btn");
+        const restartSessionBtn = document.getElementById("restart-session-btn");
+        const ageWidgetPanel = document.getElementById("age-widget-panel");
+        const ageWidgetFrame = document.getElementById("age-widget-frame");
+        const ageWidgetPlaceholder = document.getElementById("age-widget-placeholder");
+
+        window.addEventListener("message", handleWidgetMessage);
+
+        headerCartBtn.addEventListener("click", () => {
+            if (getCartCount() > 0) showCheckout();
+        });
+        document.getElementById("back-to-shop-btn").addEventListener("click", showCatalog);
+        document.getElementById("verify-age-btn").addEventListener("click", openAgeVerification);
+        document.getElementById("retry-age-btn").addEventListener("click", openAgeVerification);
+        document.getElementById("restart-session-btn").addEventListener("click", restartVerificationSession);
+        document.getElementById("new-order-btn").addEventListener("click", resetOrder);
+
+        detailsForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            await prepareVerificationSession();
+        });
+
+        paymentForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            if (!verificationState.verified) {
+                setAgeStatus("Complete age verification before payment.", "error");
+                return;
+            }
+
+            showComplete();
+        });
+
+        renderCart();
+
+        function renderCatalog() {
+            const hasCartItems = getCartCount() > 0;
+            catalogGrid.innerHTML = beers.map(beer => `
+                <article class="beer-card">
+                    <div class="beer-art">
+                        <img src="${beer.image}" alt="${beer.name}">
+                    </div>
+                    <div>
+                        <p class="text-uppercase text-secondary fw-semibold small mb-1">${beer.style}</p>
+                        <h3 class="h5 mb-1">${beer.name}</h3>
+                        <p class="beer-meta mb-0">${beer.note}</p>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <span class="price">${formatCurrency(beer.price)}</span>
+                        <div class="d-flex gap-2 flex-wrap justify-content-end">
+                            ${renderProductCardActions(beer.id)}
+                            ${hasCartItems ? `<button class="btn btn-primary" type="button" data-card-checkout>Checkout</button>` : ""}
+                        </div>
+                    </div>
+                </article>
+            `).join("");
+
+            catalogGrid.querySelectorAll("[data-add-beer]").forEach(button => {
+                button.addEventListener("click", () => addToCart(button.dataset.addBeer));
+            });
+            catalogGrid.querySelectorAll("[data-card-increment]").forEach(button => {
+                button.addEventListener("click", () => addToCart(button.dataset.cardIncrement));
+            });
+            catalogGrid.querySelectorAll("[data-card-decrement]").forEach(button => {
+                button.addEventListener("click", () => removeFromCart(button.dataset.cardDecrement));
+            });
+            catalogGrid.querySelectorAll("[data-card-checkout]").forEach(button => {
+                button.addEventListener("click", showCheckout);
+            });
+        }
+
+        function renderProductCardActions(beerId) {
+            const quantity = cart.get(beerId) || 0;
+
+            if (quantity === 0) {
+                return `<button class="btn btn-dark" type="button" data-add-beer="${beerId}">Add</button>`;
+            }
+
+            return `
+                <div class="qty-controls">
+                    <button class="icon-btn" type="button" aria-label="Remove one" data-card-decrement="${beerId}">-</button>
+                    <span class="fw-semibold">${quantity}</span>
+                    <button class="icon-btn" type="button" aria-label="Add one" data-card-increment="${beerId}">+</button>
+                </div>
+            `;
+        }
+
+        function renderCart() {
+            const items = getCartItems();
+            const linesMarkup = items.length ? items.map(({ beer, quantity }) => `
+                <div class="cart-line">
+                    <div>
+                        <div class="fw-semibold">${beer.name}</div>
+                        <div class="text-secondary small">${quantity} x ${formatCurrency(beer.price)}</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="icon-btn" type="button" aria-label="Remove one ${beer.name}" data-decrement="${beer.id}">-</button>
+                        <span class="fw-semibold">${quantity}</span>
+                        <button class="icon-btn" type="button" aria-label="Add one ${beer.name}" data-increment="${beer.id}">+</button>
+                    </div>
+                </div>
+            `).join("") : `<p class="text-secondary mb-0">Your cart is empty.</p>`;
+
+            checkoutLines.innerHTML = linesMarkup;
+            checkoutTotal.innerText = formatCurrency(getCartTotal());
+            payTotal.innerText = formatCurrency(getCartTotal());
+            updateHeaderCartButton();
+            renderCatalog();
+
+            document.querySelectorAll("[data-increment]").forEach(button => {
+                button.addEventListener("click", () => addToCart(button.dataset.increment));
+            });
+            document.querySelectorAll("[data-decrement]").forEach(button => {
+                button.addEventListener("click", () => removeFromCart(button.dataset.decrement));
+            });
+        }
+
+        function addToCart(beerId) {
+            cart.set(beerId, (cart.get(beerId) || 0) + 1);
+            renderCart();
+        }
+
+        function removeFromCart(beerId) {
+            const nextQuantity = (cart.get(beerId) || 0) - 1;
+            if (nextQuantity <= 0) {
+                cart.delete(beerId);
+            } else {
+                cart.set(beerId, nextQuantity);
+            }
+            renderCart();
+        }
+
+        function clearCart() {
+            cart.clear();
+            renderCart();
+            if (!checkoutView.classList.contains("hidden")) {
+                showCatalog();
+            }
+        }
+
+        function updateHeaderCartButton() {
+            const count = getCartCount();
+            headerCartBtn.disabled = count === 0;
+            headerCartBtn.innerText = count > 0 ? `Checkout (${count})` : "Cart (0)";
+        }
+
+        function getCartItems() {
+            return Array.from(cart.entries()).map(([id, quantity]) => ({
+                beer: beers.find(beer => beer.id === id),
+                quantity
+            })).filter(item => item.beer && item.quantity > 0);
+        }
+
+        function getCartCount() {
+            return getCartItems().reduce((sum, item) => sum + item.quantity, 0);
+        }
+
+        function getCartTotal() {
+            return getCartItems().reduce((sum, item) => sum + item.beer.price * item.quantity, 0);
+        }
+
+        function showCatalog() {
+            catalogView.classList.remove("hidden");
+            checkoutView.classList.add("hidden");
+            completeView.classList.add("hidden");
+        }
+
+        function showCheckout() {
+            if (getCartCount() === 0) return;
+            catalogView.classList.add("hidden");
+            checkoutView.classList.remove("hidden");
+            completeView.classList.add("hidden");
+            syncCheckoutStepView();
+        }
+
+        function syncCheckoutStepView() {
+            basicStep.classList.toggle("hidden", Boolean(verificationState.sessionId));
+            ageStep.classList.toggle("hidden", !verificationState.sessionId || verificationState.verified);
+            paymentForm.classList.toggle("hidden", !verificationState.verified);
+            ageWidgetPanel.classList.toggle("hidden", !verificationState.sessionId || verificationState.verified);
+
+            if (verificationState.verified) {
+                updateCheckoutStep("payment");
+                return;
+            }
+
+            updateCheckoutStep(verificationState.sessionId ? "age" : "basic");
+        }
+
+        async function prepareVerificationSession() {
+            const name = document.getElementById("checkout-name").value.trim();
+            const email = document.getElementById("checkout-email").value.trim();
+
+            if (!name || !email) return;
+
+            setButtonLoading(detailsSubmitBtn, true, "Preparing...");
+
+            try {
+                await refreshVerificationSession(name, email);
+
+                basicStep.classList.add("hidden");
+                ageStep.classList.remove("hidden");
+                ageWidgetPanel.classList.remove("hidden");
+                updateCheckoutStep("age");
+                setAgeStatus("Verification session is ready.", "");
+                resetAgeActionButtons();
+            } catch (error) {
+                setAgeStatus(error.message, "error");
+                alert(`Verification Setup Error: ${error.message}`);
+            } finally {
+                setButtonLoading(detailsSubmitBtn, false);
+            }
+        }
+
+        async function refreshVerificationSession(name, email) {
+            const response = await fetch(`${window.location.origin}/get-required-tokens-and-session-for-a-user`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, email })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || data.message || "Could not start age verification.");
+            }
+
+            verificationState.tokens.kycAdmin = data.kycAdminToken;
+            verificationState.tokens.ssiAdmin = data.ssiAdminToken;
+            verificationState.tokens.userBearer = data.kycUserAccessToken || data.userBearerToken;
+            verificationState.sessionId = data.sessionId;
+            verificationState.widgetUrl = normalizeWidgetUrl(data.widgetUrl || verificationState.widgetUrl);
+            verificationState.customer.name = name;
+            verificationState.customer.email = email;
+            verificationState.verified = false;
+        }
+
+        async function restartVerificationSession() {
+            const name = verificationState.customer.name || document.getElementById("checkout-name").value.trim();
+            const email = verificationState.customer.email || document.getElementById("checkout-email").value.trim();
+
+            if (!name || !email) {
+                setAgeStatus("Enter your details before restarting verification.", "error");
+                return;
+            }
+
+            clearWidgetCloseTimer();
+            resetAgeWidgetFrame();
+
+            setButtonLoading(restartSessionBtn, true, "Restarting...");
+            verifyAgeBtn.disabled = true;
+            retryAgeBtn.classList.add("hidden");
+            setAgeStatus("Requesting a new verification session...", "");
+
+            try {
+                await refreshVerificationSession(name, email);
+                paymentForm.classList.add("hidden");
+                ageWidgetPanel.classList.remove("hidden");
+                updateCheckoutStep("age");
+                resetAgeActionButtons();
+                setAgeStatus("New verification session is ready.", "success");
+            } catch (error) {
+                setAgeStatus(error.message, "error");
+                restartSessionBtn.classList.remove("hidden");
+            } finally {
+                setButtonLoading(restartSessionBtn, false);
+            }
+        }
+
+        function openAgeVerification() {
+            if (!verificationState.sessionId || !verificationState.tokens.userBearer) {
+                setAgeStatus("Enter your details before age verification.", "error");
+                return;
+            }
+
+            clearWidgetCloseTimer();
+            const targetUrl = buildWidgetUrl();
+            ageWidgetPanel.classList.remove("hidden");
+            ageWidgetPlaceholder.classList.add("hidden");
+            ageWidgetFrame.src = targetUrl;
+            ageWidgetFrame.classList.remove("hidden");
+            verificationState.widgetActive = true;
+            verifyAgeBtn.disabled = true;
+            retryAgeBtn.classList.add("hidden");
+            restartSessionBtn.classList.add("hidden");
+            setAgeStatus("Complete the age check in the Hypersign panel.", "");
+        }
+
+        function handleWidgetMessage(event) {
+            if (!verificationState.widgetUrl) return;
+
+            const fromEmbeddedWidget = ageWidgetFrame.contentWindow && event.source === ageWidgetFrame.contentWindow;
+            if (!fromEmbeddedWidget) return;
+
+            const expectedOrigin = new URL(verificationState.widgetUrl, window.location.origin).origin;
+            if (event.origin !== expectedOrigin) return;
+
+            clearWidgetCloseTimer();
+
+            try {
+                const payload = parseWidgetPayload(event.data);
+                const { status, message, code } = payload;
+
+                if (status === "success" && code === "VERIFICATION_SUCCESS") {
+                    markAgeVerified(message || "Age verification completed.");
+                    return;
+                }
+
+                if (status === "error") {
+                    showAgeVerificationFailure(code, message);
+                    return;
+                }
+
+                showAgeVerificationFailure(code, message || "Unknown widget response.");
+            } catch (error) {
+                showAgeVerificationFailure("", "Could not read the widget response.");
+            }
+        }
+
+        function markAgeVerified(message) {
+            verificationState.verified = true;
+            verificationState.widgetActive = false;
+            resetAgeWidgetFrame();
+            ageWidgetPanel.classList.add("hidden");
+            ageStep.classList.add("hidden");
+            verifyAgeBtn.disabled = true;
+            verifyAgeBtn.innerText = "✓ Age Verified";
+            retryAgeBtn.classList.add("hidden");
+            restartSessionBtn.classList.add("hidden");
+            setAgeStatus(message, "success");
+            paymentForm.classList.remove("hidden");
+            updateCheckoutStep("payment");
+        }
+
+        function parseWidgetPayload(data) {
+            if (typeof data === "string") {
+                return JSON.parse(data);
+            }
+
+            return data || {};
+        }
+
+        function showAgeVerificationFailure(code, message) {
+            verificationState.widgetActive = false;
+            resetAgeWidgetFrame();
+            setAgeStatus(message || getKycErrorMessage(code), "error");
+            verifyAgeBtn.disabled = false;
+            retryAgeBtn.classList.add("hidden");
+            restartSessionBtn.classList.remove("hidden");
+        }
+
+        function getKycErrorMessage(code) {
+            switch (code) {
+                case "SESSION_EXPIRED":
+                    return "Verification session expired. Restart the session and try again.";
+                case "ACCESS_TOKEN_EXPIRED":
+                    return "Verification tokens expired. Restart the session and try again.";
+                case "LIVELINESS_VERIFICATION_FAILED":
+                    return "Biometric validation failed. Restart the session and try again.";
+                case "DOCUMENT_VERIFICATION_FAILED":
+                    return "Document verification failed. Restart the session and try again.";
+                case "ZK_PROOF_GENERATION_FAILED":
+                    return "Proof generation failed. Restart the session and try again.";
+                default:
+                    return "Age verification failed.";
+            }
+        }
+
+        function buildWidgetUrl() {
+            const url = new URL(normalizeWidgetUrl(verificationState.widgetUrl), window.location.origin);
+            url.searchParams.set("kycAccessToken", verificationState.tokens.kycAdmin);
+            url.searchParams.set("ssiAccessToken", verificationState.tokens.ssiAdmin);
+            url.searchParams.set("sessionId", verificationState.sessionId);
+            url.searchParams.set("kycUserAccessToken", verificationState.tokens.userBearer);
+            return url.toString();
+        }
+
+        function normalizeWidgetUrl(value) {
+            const normalizedUrl = (value || "").trim();
+
+            if (normalizedUrl.startsWith("http://verify.hypersign.id")) {
+                return normalizedUrl.replace(/^http:\/\//, "https://");
+            }
+
+            return normalizedUrl;
+        }
+
+        function updateCheckoutStep(step) {
+            const basicPill = document.getElementById("step-basic-pill");
+            const agePill = document.getElementById("step-age-pill");
+            const payPill = document.getElementById("step-pay-pill");
+
+            basicPill.className = "step-pill";
+            agePill.className = "step-pill";
+            payPill.className = "step-pill";
+
+            if (step === "basic") {
+                basicPill.classList.add("active");
+                return;
+            }
+
+            basicPill.classList.add("done");
+
+            if (step === "age") {
+                agePill.classList.add("active");
+                return;
+            }
+
+            agePill.classList.add("done");
+            payPill.classList.add("active");
+        }
+
+        function setAgeStatus(message, type) {
+            ageStatus.innerText = message;
+            ageStatus.className = "status-box mb-3";
+            if (type) ageStatus.classList.add(type);
+        }
+
+        function setButtonLoading(button, isLoading, loadingText) {
+            if (!button) return;
+
+            if (isLoading) {
+                if (!button.dataset.defaultText) {
+                    button.dataset.defaultText = button.innerText;
+                }
+                button.disabled = true;
+                button.innerHTML = `<span class="button-loader">${loadingText || button.innerText}</span>`;
+                return;
+            }
+
+            button.disabled = false;
+            button.innerText = button.dataset.defaultText || button.innerText;
+        }
+
+        function showComplete() {
+            checkoutView.classList.add("hidden");
+            completeView.classList.remove("hidden");
+            document.getElementById("complete-copy").innerText =
+                `Thanks ${verificationState.customer.name}. Your dummy BeerKart order for ${formatCurrency(getCartTotal())} is complete.`;
+        }
+
+        function resetOrder() {
+            clearWidgetCloseTimer();
+            cart.clear();
+            verificationState.tokens.kycAdmin = "";
+            verificationState.tokens.ssiAdmin = "";
+            verificationState.tokens.userBearer = "";
+            verificationState.sessionId = "";
+            verificationState.verified = false;
+            verificationState.customer.name = "";
+            verificationState.customer.email = "";
+            verificationState.widgetActive = false;
+            resetAgeWidgetFrame();
+
+            detailsForm.reset();
+            paymentForm.reset();
+            basicStep.classList.remove("hidden");
+            ageStep.classList.add("hidden");
+            ageWidgetPanel.classList.add("hidden");
+            paymentForm.classList.add("hidden");
+            verifyAgeBtn.disabled = false;
+            verifyAgeBtn.innerText = "Verify Your Age";
+            retryAgeBtn.classList.add("hidden");
+            restartSessionBtn.classList.add("hidden");
+            setAgeStatus("Verification session is ready.", "");
+            renderCart();
+            showCatalog();
+        }
+
+        function resetAgeActionButtons() {
+            verifyAgeBtn.disabled = false;
+            verifyAgeBtn.innerText = "Verify Your Age";
+            retryAgeBtn.classList.add("hidden");
+            restartSessionBtn.classList.add("hidden");
+            resetAgeWidgetFrame();
+        }
+
+        function resetAgeWidgetFrame() {
+            verificationState.widgetActive = false;
+            ageWidgetFrame.removeAttribute("src");
+            ageWidgetFrame.classList.add("hidden");
+            ageWidgetPlaceholder.classList.remove("hidden");
+        }
+
+        function clearWidgetCloseTimer() {
+            if (verificationState.closeTimer) {
+                window.clearInterval(verificationState.closeTimer);
+                verificationState.closeTimer = null;
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD"
+            }).format(value);
+        }
+    </script>
+</body>
+
+</html>
