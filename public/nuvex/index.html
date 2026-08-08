@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NuVex Exchange</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070b;
+            --panel: #0d121b;
+            --panel-soft: #141b28;
+            --line: rgba(142, 168, 204, 0.18);
+            --ink: #edf5ff;
+            --muted: #8ea0b8;
+            --buy: #33c481;
+            --sell: #e35f5f;
+            --accent: #5da8ff;
+            --accent-2: #9dd46f;
+            --warn: #e3b85f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 18% 8%, rgba(93, 168, 255, 0.18), transparent 28%),
+                radial-gradient(circle at 82% 16%, rgba(157, 212, 111, 0.11), transparent 24%),
+                linear-gradient(180deg, #05070b 0%, #080c13 52%, #06080d 100%);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        .text-secondary {
+            color: var(--muted) !important;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .app-shell {
+            max-width: 1280px;
+        }
+
+        .topbar {
+            align-items: center;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            padding: 22px 0;
+        }
+
+        .brand-lockup {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            border-radius: 8px;
+            display: block;
+            height: 52px;
+            object-fit: cover;
+            object-position: 12% 42%;
+            width: 52px;
+        }
+
+        .brand-name {
+            font-size: 1.45rem;
+            font-weight: 900;
+            letter-spacing: 0;
+            line-height: 1;
+        }
+
+        .panel,
+        .checkout-panel,
+        .widget-panel,
+        .complete-panel {
+            background: rgba(13, 18, 27, 0.95);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+        }
+
+        .market-grid {
+            align-items: start;
+            display: grid;
+            gap: 16px;
+            grid-template-columns: minmax(0, 1fr) 340px;
+        }
+
+        .pair-strip {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            margin-bottom: 12px;
+        }
+
+        .pair-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--ink);
+            padding: 14px;
+            text-align: left;
+        }
+
+        .pair-card.active {
+            border-color: rgba(93, 168, 255, 0.72);
+            box-shadow: inset 0 0 0 1px rgba(93, 168, 255, 0.22);
+        }
+
+        .pair-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .ticker-strip {
+            background: rgba(13, 18, 27, 0.9);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            padding: 9px 0;
+            white-space: nowrap;
+        }
+
+        .ticker-track {
+            animation: ticker-move 28s linear infinite;
+            display: inline-flex;
+            gap: 28px;
+            min-width: max-content;
+        }
+
+        .ticker-item {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .ticker-up {
+            color: var(--buy);
+        }
+
+        .ticker-down {
+            color: var(--sell);
+        }
+
+        @keyframes ticker-move {
+            from {
+                transform: translateX(-50%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .chart-panel {
+            padding: 16px;
+        }
+
+        .chart-toolbar {
+            align-items: center;
+            display: flex;
+            gap: 14px;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .chart-wrap {
+            background:
+                linear-gradient(rgba(142, 168, 204, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(142, 168, 204, 0.06) 1px, transparent 1px),
+                #08101a;
+            background-size: 42px 42px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            height: 390px;
+            overflow: hidden;
+        }
+
+        #price-chart {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+
+        .side-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .order-ticket {
+            padding: 16px;
+        }
+
+        .segmented {
+            background: #090e15;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            padding: 4px;
+        }
+
+        .segmented button {
+            background: transparent;
+            border: 0;
+            border-radius: 6px;
+            color: var(--muted);
+            font-weight: 800;
+            padding: 8px 10px;
+        }
+
+        .segmented button.active.buy {
+            background: rgba(51, 196, 129, 0.16);
+            color: var(--buy);
+        }
+
+        .segmented button.active.sell {
+            background: rgba(227, 95, 95, 0.16);
+            color: var(--sell);
+        }
+
+        .form-control,
+        .form-select {
+            background: #090e15;
+            border-color: rgba(142, 168, 204, 0.22);
+            color: var(--ink);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #090e15;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 0.25rem rgba(93, 168, 255, 0.16);
+            color: var(--ink);
+        }
+
+        .form-control::placeholder {
+            color: rgba(237, 245, 255, 0.38);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #06101b;
+            font-weight: 800;
+        }
+
+        .btn-primary:hover {
+            background: #80bbff;
+            border-color: #80bbff;
+            color: #06101b;
+        }
+
+        .btn-outline-secondary {
+            border-color: rgba(237, 245, 255, 0.28);
+            color: var(--ink);
+        }
+
+        .btn-outline-secondary:hover {
+            background: rgba(237, 245, 255, 0.08);
+            border-color: rgba(237, 245, 255, 0.48);
+            color: #fff;
+        }
+
+        .btn-success {
+            background: var(--buy);
+            border-color: var(--buy);
+            color: #04110b;
+            font-weight: 800;
+        }
+
+        .book-row {
+            display: grid;
+            font-size: 0.88rem;
+            grid-template-columns: 1fr 1fr 1fr;
+            padding: 5px 0;
+        }
+
+        .book-row.sell {
+            color: #ff9e9e;
+        }
+
+        .book-row.buy {
+            color: #8df0bd;
+        }
+
+        .stats-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .stat {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .stepper {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-bottom: 18px;
+        }
+
+        .step-pill {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 800;
+            padding: 10px 12px;
+            text-align: center;
+        }
+
+        .step-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #06101b;
+        }
+
+        .step-pill.done {
+            background: rgba(51, 196, 129, 0.12);
+            border-color: rgba(51, 196, 129, 0.35);
+            color: var(--buy);
+        }
+
+        .checkout-panel,
+        .complete-panel {
+            padding: 22px;
+        }
+
+        .checkout-grid {
+            align-items: start;
+            display: grid;
+            gap: 16px;
+            grid-template-columns: minmax(0, 1fr) 390px;
+        }
+
+        .status-box {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--muted);
+            min-height: 48px;
+            padding: 12px;
+        }
+
+        .status-box.success {
+            background: rgba(51, 196, 129, 0.1);
+            border-color: rgba(51, 196, 129, 0.35);
+            color: var(--buy);
+        }
+
+        .status-box.error {
+            background: rgba(227, 95, 95, 0.12);
+            border-color: rgba(227, 95, 95, 0.36);
+            color: #ffaaaa;
+        }
+
+        .widget-panel {
+            overflow: hidden;
+        }
+
+        .widget-panel-header {
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            padding: 14px 16px;
+        }
+
+        .widget-frame-wrap {
+            background: #05070b;
+            height: min(760px, calc(100vh - 180px));
+            min-height: 620px;
+        }
+
+        .widget-frame {
+            border: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        .widget-placeholder {
+            align-items: center;
+            background: linear-gradient(135deg, rgba(93, 168, 255, 0.13), rgba(5, 7, 11, 0.92));
+            color: var(--muted);
+            display: flex;
+            font-weight: 700;
+            height: 100%;
+            justify-content: center;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .button-loader {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .button-loader::before {
+            animation: spin 0.8s linear infinite;
+            border: 2px solid rgba(6, 16, 27, 0.45);
+            border-radius: 50%;
+            border-top-color: #06101b;
+            content: "";
+            height: 14px;
+            width: 14px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 1080px) {
+
+            .market-grid,
+            .checkout-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .side-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+
+            .topbar,
+            .chart-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .pair-strip,
+            .side-grid,
+            .stats-grid,
+            .stepper {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrap {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container app-shell pb-5">
+        <header class="topbar">
+            <div class="brand-lockup">
+                <img class="brand-logo" src="assets/logo.png" alt="">
+                <span class="brand-name">NuveX</span>
+            </div>
+            <button id="fund-wallet-btn" class="btn btn-primary" type="button">Fund Wallet</button>
+        </header>
+
+        <section id="market-view">
+            <div class="pair-strip" aria-label="Trading pairs">
+                <button class="pair-card active" type="button" data-pair="BTCUSDT">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <strong>BTC/USDT</strong>
+                        <span class="text-success">+2.18%</span>
+                    </div>
+                    <div id="btc-price" class="pair-price">$67,240.18</div>
+                    <div class="text-secondary small">Bitcoin / Tether</div>
+                </button>
+                <button class="pair-card" type="button" data-pair="ETHUSDT">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <strong>ETH/USDT</strong>
+                        <span class="text-danger">-0.74%</span>
+                    </div>
+                    <div id="eth-price" class="pair-price">$3,486.92</div>
+                    <div class="text-secondary small">Ethereum / Tether</div>
+                </button>
+                <button class="pair-card" type="button" data-pair="SOLUSDT">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <strong>SOL/USDT</strong>
+                        <span class="text-success">+4.62%</span>
+                    </div>
+                    <div class="pair-price">$182.44</div>
+                    <div class="text-secondary small">Solana / Tether</div>
+                </button>
+                <button class="pair-card" type="button" data-pair="BNBUSDT">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <strong>BNB/USDT</strong>
+                        <span class="text-success">+1.36%</span>
+                    </div>
+                    <div class="pair-price">$612.80</div>
+                    <div class="text-secondary small">BNB / Tether</div>
+                </button>
+                <button class="pair-card" type="button" data-pair="XRPUSDT">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <strong>XRP/USDT</strong>
+                        <span class="text-danger">-1.12%</span>
+                    </div>
+                    <div class="pair-price">$0.6248</div>
+                    <div class="text-secondary small">XRP / Tether</div>
+                </button>
+            </div>
+
+            <div class="ticker-strip" aria-label="Live market ticker">
+                <div class="ticker-track">
+                    <span class="ticker-item">BTC/USDT <strong>$67,240.18</strong> <span class="ticker-up">+2.18%</span></span>
+                    <span class="ticker-item">ETH/USDT <strong>$3,486.92</strong> <span class="ticker-down">-0.74%</span></span>
+                    <span class="ticker-item">SOL/USDT <strong>$182.44</strong> <span class="ticker-up">+4.62%</span></span>
+                    <span class="ticker-item">BNB/USDT <strong>$612.80</strong> <span class="ticker-up">+1.36%</span></span>
+                    <span class="ticker-item">XRP/USDT <strong>$0.6248</strong> <span class="ticker-down">-1.12%</span></span>
+                    <span class="ticker-item">ADA/USDT <strong>$0.4821</strong> <span class="ticker-up">+0.88%</span></span>
+                    <span class="ticker-item">AVAX/USDT <strong>$31.72</strong> <span class="ticker-down">-0.42%</span></span>
+                    <span class="ticker-item">BTC/USDT <strong>$67,240.18</strong> <span class="ticker-up">+2.18%</span></span>
+                    <span class="ticker-item">ETH/USDT <strong>$3,486.92</strong> <span class="ticker-down">-0.74%</span></span>
+                    <span class="ticker-item">SOL/USDT <strong>$182.44</strong> <span class="ticker-up">+4.62%</span></span>
+                    <span class="ticker-item">BNB/USDT <strong>$612.80</strong> <span class="ticker-up">+1.36%</span></span>
+                    <span class="ticker-item">XRP/USDT <strong>$0.6248</strong> <span class="ticker-down">-1.12%</span></span>
+                    <span class="ticker-item">ADA/USDT <strong>$0.4821</strong> <span class="ticker-up">+0.88%</span></span>
+                    <span class="ticker-item">AVAX/USDT <strong>$31.72</strong> <span class="ticker-down">-0.42%</span></span>
+                </div>
+            </div>
+
+            <div class="market-grid">
+                <section class="panel chart-panel">
+                    <div class="chart-toolbar">
+                        <div>
+                            <p class="text-uppercase text-secondary fw-semibold small mb-1">Spot Market</p>
+                            <h2 id="chart-title" class="h4 mb-0">BTC/USDT</h2>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat">
+                                <div class="text-secondary small">Last Price</div>
+                                <div id="last-price" class="fw-bold">$67,240.18</div>
+                            </div>
+                            <div class="stat">
+                                <div class="text-secondary small">24h High</div>
+                                <div id="high-price" class="fw-bold">$68,120.40</div>
+                            </div>
+                            <div class="stat">
+                                <div class="text-secondary small">24h Volume</div>
+                                <div id="volume-value" class="fw-bold">18.4K BTC</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                </section>
+
+                <aside class="side-grid">
+                    <section class="panel order-ticket">
+                        <h2 class="h5 mb-3">Place Order</h2>
+                        <div class="segmented mb-3">
+                            <button id="buy-side-btn" class="active buy" type="button">Buy</button>
+                            <button id="sell-side-btn" class="sell" type="button">Sell</button>
+                        </div>
+                        <div class="mb-3">
+                            <label for="order-type" class="form-label">Order Type</label>
+                            <select id="order-type" class="form-select">
+                                <option>Market</option>
+                                <option>Limit</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="order-amount" class="form-label">Amount</label>
+                            <input id="order-amount" class="form-control" type="number" min="0" step="0.0001"
+                                value="0.10">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <span class="text-secondary">Estimated Total</span>
+                            <strong id="order-total">$6,724.02</strong>
+                        </div>
+                        <button id="place-order-btn" class="btn btn-primary w-100" type="button">Place Order</button>
+                        <p class="text-secondary small mt-3 mb-0">Identity verification and wallet funding are required
+                            before execution.</p>
+                    </section>
+
+                    <section class="panel order-ticket">
+                        <h2 class="h6 mb-3">Order Book</h2>
+                        <div id="order-book"></div>
+                    </section>
+                </aside>
+            </div>
+        </section>
+
+        <section id="checkout-view" class="hidden">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-4">
+                <div>
+                    <p class="text-uppercase text-secondary fw-semibold small mb-2">Wallet Onboarding</p>
+                    <h2 class="h3 mb-0">Verify and fund your NuVex wallet</h2>
+                </div>
+                <button id="back-to-market-btn" class="btn btn-outline-secondary" type="button">Back to market</button>
+            </div>
+
+            <div class="checkout-grid">
+                <section class="checkout-panel">
+                    <div class="stepper" aria-label="Onboarding progress">
+                        <div id="step-basic-pill" class="step-pill active">1. Basic Detail</div>
+                        <div id="step-id-pill" class="step-pill">2. ID Verification</div>
+                        <div id="step-fund-pill" class="step-pill">3. Fund Wallet</div>
+                    </div>
+
+                    <form id="details-form">
+                        <div id="basic-step">
+                            <h3 class="h5 mb-3">Basic Detail</h3>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label for="customer-name" class="form-label">Full Name</label>
+                                    <input id="customer-name" class="form-control" type="text" autocomplete="name"
+                                        required>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="customer-email" class="form-label">Email Address</label>
+                                    <input id="customer-email" class="form-control" type="email" autocomplete="email"
+                                        required>
+                                </div>
+                            </div>
+                            <button id="details-submit-btn" class="btn btn-primary mt-3" type="submit">Continue</button>
+                        </div>
+                    </form>
+
+                    <div id="id-step" class="hidden">
+                        <h3 class="h5 mb-3">ID Verification</h3>
+                        <p class="text-secondary mb-3">NuVex requires identity verification before wallet funding and
+                            trading.</p>
+                        <div id="id-status" class="status-box mb-3">Verification session is ready.</div>
+                        <button id="verify-id-btn" class="btn btn-primary" type="button">Verify ID</button>
+                        <button id="restart-session-btn" class="btn btn-outline-secondary hidden ms-2"
+                            type="button">Restart Session</button>
+                    </div>
+
+                    <form id="fund-form" class="hidden">
+                        <h3 class="h5 mb-3">Fund Wallet</h3>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="fund-amount" class="form-label">Funding Amount</label>
+                                <input id="fund-amount" class="form-control" type="number" min="50" step="10"
+                                    value="500" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="card-name" class="form-label">Name on Card</label>
+                                <input id="card-name" class="form-control" type="text" autocomplete="cc-name" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="card-number" class="form-label">Card Number</label>
+                                <input id="card-number" class="form-control" type="text" inputmode="numeric"
+                                    placeholder="4242 4242 4242 4242" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="card-expiry" class="form-label">Expiry</label>
+                                <input id="card-expiry" class="form-control" type="text" placeholder="12/30" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="card-cvc" class="form-label">CVC</label>
+                                <input id="card-cvc" class="form-control" type="text" inputmode="numeric"
+                                    placeholder="123" required>
+                            </div>
+                        </div>
+                        <button id="fund-submit-btn" class="btn btn-success mt-3" type="submit">Fund Wallet</button>
+                    </form>
+                </section>
+
+                <aside>
+                    <section id="id-widget-panel" class="widget-panel hidden" aria-label="Hypersign ID widget">
+                        <div class="widget-panel-header">
+                            <h2 class="h6 mb-0">Hypersign ID</h2>
+                            <span class="text-secondary small">KYC check</span>
+                        </div>
+                        <div class="widget-frame-wrap">
+                            <div id="id-widget-placeholder" class="widget-placeholder">Your verification flow will
+                                appear here.</div>
+                            <iframe id="id-widget-frame" class="widget-frame hidden" title="Hypersign ID Widget"
+                                allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"></iframe>
+                        </div>
+                    </section>
+
+                    <section class="panel order-ticket">
+                        <h2 class="h6 mb-3">Pending Order</h2>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-secondary">Pair</span>
+                            <strong id="summary-pair">BTC/USDT</strong>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="text-secondary">Side</span>
+                            <strong id="summary-side">Buy</strong>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="text-secondary">Amount</span>
+                            <strong id="summary-amount">0.10 BTC</strong>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top"
+                            style="border-color: var(--line) !important;">
+                            <span class="text-secondary">Estimated Total</span>
+                            <strong id="summary-total">$6,724.02</strong>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </section>
+
+        <section id="complete-view" class="complete-panel hidden mt-4">
+            <p class="text-uppercase text-success fw-semibold small mb-2">Wallet funded</p>
+            <h2 class="h3 mb-2">Your demo order is ready</h2>
+            <p id="complete-copy" class="text-secondary mb-4"></p>
+            <button id="new-order-btn" class="btn btn-primary" type="button">Return to Market</button>
+        </section>
+    </main>
+
+    <script>
+        const markets = {
+            BTCUSDT: {
+                label: "BTC/USDT",
+                base: "BTC",
+                last: 67240.18,
+                high: 68120.40,
+                volume: "18.4K BTC",
+                change: 2.18,
+                chart: [65100, 65580, 65320, 66140, 66520, 66290, 67040, 66820, 67240, 67610, 67320, 67960, 67240],
+                asks: [[67280.20, 0.42], [67274.50, 0.61], [67263.10, 0.25], [67251.80, 0.78]],
+                bids: [[67231.60, 0.53], [67220.15, 0.37], [67208.70, 0.92], [67190.40, 0.44]]
+            },
+            ETHUSDT: {
+                label: "ETH/USDT",
+                base: "ETH",
+                last: 3486.92,
+                high: 3542.10,
+                volume: "94.8K ETH",
+                change: -0.74,
+                chart: [3512, 3498, 3526, 3504, 3478, 3460, 3482, 3491, 3470, 3458, 3476, 3494, 3486],
+                asks: [[3491.40, 8.2], [3489.80, 11.4], [3488.30, 4.9], [3487.50, 14.7]],
+                bids: [[3485.90, 6.8], [3484.20, 9.1], [3482.75, 12.6], [3480.10, 5.3]]
+            },
+            SOLUSDT: {
+                label: "SOL/USDT",
+                base: "SOL",
+                last: 182.44,
+                high: 188.90,
+                volume: "2.8M SOL",
+                change: 4.62,
+                chart: [169.2, 171.8, 174.1, 172.7, 176.9, 180.4, 178.6, 181.2, 183.8, 182.1, 185.3, 184.0, 182.44],
+                asks: [[183.02, 820], [182.88, 1140], [182.71, 640], [182.55, 930]],
+                bids: [[182.31, 780], [182.18, 1260], [181.96, 940], [181.72, 510]]
+            },
+            BNBUSDT: {
+                label: "BNB/USDT",
+                base: "BNB",
+                last: 612.80,
+                high: 619.45,
+                volume: "624K BNB",
+                change: 1.36,
+                chart: [601.4, 604.8, 608.2, 606.1, 610.0, 613.5, 611.8, 615.2, 612.7, 616.4, 614.3, 617.1, 612.8],
+                asks: [[613.35, 72], [613.10, 118], [612.96, 54], [612.88, 93]],
+                bids: [[612.54, 66], [612.30, 140], [612.12, 82], [611.80, 126]]
+            },
+            XRPUSDT: {
+                label: "XRP/USDT",
+                base: "XRP",
+                last: 0.6248,
+                high: 0.6412,
+                volume: "412M XRP",
+                change: -1.12,
+                chart: [0.636, 0.632, 0.629, 0.633, 0.628, 0.625, 0.621, 0.626, 0.623, 0.619, 0.622, 0.627, 0.6248],
+                asks: [[0.6261, 184000], [0.6257, 260000], [0.6253, 142000], [0.6250, 318000]],
+                bids: [[0.6244, 210000], [0.6240, 176000], [0.6236, 298000], [0.6231, 124000]]
+            }
+        };
+
+        const state = {
+            pair: "BTCUSDT",
+            side: "Buy",
+            orderAmount: 0.10,
+            orderTotal: 6724.02,
+            tokens: {
+                kycAdmin: "",
+                ssiAdmin: "",
+                userBearer: ""
+            },
+            sessionId: "",
+            widgetUrl: "https://verify.hypersign.id",
+            verified: false,
+            customer: {
+                name: "",
+                email: ""
+            }
+        };
+
+        const marketView = document.getElementById("market-view");
+        const checkoutView = document.getElementById("checkout-view");
+        const completeView = document.getElementById("complete-view");
+        const priceChart = document.getElementById("price-chart");
+        const orderAmountInput = document.getElementById("order-amount");
+        const orderTotal = document.getElementById("order-total");
+        const detailsForm = document.getElementById("details-form");
+        const fundForm = document.getElementById("fund-form");
+        const basicStep = document.getElementById("basic-step");
+        const idStep = document.getElementById("id-step");
+        const idStatus = document.getElementById("id-status");
+        const detailsSubmitBtn = document.getElementById("details-submit-btn");
+        const verifyIdBtn = document.getElementById("verify-id-btn");
+        const restartSessionBtn = document.getElementById("restart-session-btn");
+        const idWidgetPanel = document.getElementById("id-widget-panel");
+        const idWidgetFrame = document.getElementById("id-widget-frame");
+        const idWidgetPlaceholder = document.getElementById("id-widget-placeholder");
+
+        window.addEventListener("message", handleWidgetMessage);
+        window.addEventListener("resize", drawChart);
+
+        document.querySelectorAll("[data-pair]").forEach(button => {
+            button.addEventListener("click", () => selectPair(button.dataset.pair));
+        });
+        document.getElementById("buy-side-btn").addEventListener("click", () => setOrderSide("Buy"));
+        document.getElementById("sell-side-btn").addEventListener("click", () => setOrderSide("Sell"));
+        document.getElementById("place-order-btn").addEventListener("click", showCheckout);
+        document.getElementById("fund-wallet-btn").addEventListener("click", showCheckout);
+        document.getElementById("back-to-market-btn").addEventListener("click", showMarket);
+        document.getElementById("verify-id-btn").addEventListener("click", openIdVerification);
+        document.getElementById("restart-session-btn").addEventListener("click", restartVerificationSession);
+        document.getElementById("new-order-btn").addEventListener("click", resetToMarket);
+        orderAmountInput.addEventListener("input", updateOrderEstimate);
+
+        detailsForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            await prepareVerificationSession();
+        });
+
+        fundForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            if (!state.verified) {
+                setIdStatus("Complete ID verification before funding your wallet.", "error");
+                return;
+            }
+            showComplete();
+        });
+
+        selectPair(state.pair);
+        setOrderSide(state.side);
+
+        function selectPair(pair) {
+            state.pair = pair;
+            document.querySelectorAll("[data-pair]").forEach(button => {
+                button.classList.toggle("active", button.dataset.pair === pair);
+            });
+
+            const market = markets[pair];
+            document.getElementById("chart-title").innerText = market.label;
+            document.getElementById("last-price").innerText = formatCurrency(market.last);
+            document.getElementById("high-price").innerText = formatCurrency(market.high);
+            document.getElementById("volume-value").innerText = market.volume;
+            updateOrderEstimate();
+            renderOrderBook();
+            drawChart();
+        }
+
+        function setOrderSide(side) {
+            state.side = side;
+            document.getElementById("buy-side-btn").classList.toggle("active", side === "Buy");
+            document.getElementById("sell-side-btn").classList.toggle("active", side === "Sell");
+            updateOrderEstimate();
+        }
+
+        function updateOrderEstimate() {
+            const market = markets[state.pair];
+            state.orderAmount = Number(orderAmountInput.value || 0);
+            state.orderTotal = state.orderAmount * market.last;
+            orderTotal.innerText = formatCurrency(state.orderTotal);
+            updateOrderSummary();
+        }
+
+        function updateOrderSummary() {
+            const market = markets[state.pair];
+            document.getElementById("summary-pair").innerText = market.label;
+            document.getElementById("summary-side").innerText = state.side;
+            document.getElementById("summary-amount").innerText = `${state.orderAmount || 0} ${market.base}`;
+            document.getElementById("summary-total").innerText = formatCurrency(state.orderTotal);
+        }
+
+        function renderOrderBook() {
+            const market = markets[state.pair];
+            const askRows = market.asks.map(([price, size]) => `
+                <div class="book-row sell"><span>${formatCurrency(price)}</span><span>${size}</span><span>${formatCurrency(price * size)}</span></div>
+            `).join("");
+            const bidRows = market.bids.map(([price, size]) => `
+                <div class="book-row buy"><span>${formatCurrency(price)}</span><span>${size}</span><span>${formatCurrency(price * size)}</span></div>
+            `).join("");
+
+            document.getElementById("order-book").innerHTML = `
+                <div class="book-row text-secondary"><span>Price</span><span>Size</span><span>Total</span></div>
+                ${askRows}
+                <div class="book-row"><strong>${formatCurrency(market.last)}</strong><span></span><span></span></div>
+                ${bidRows}
+            `;
+        }
+
+        function drawChart() {
+            const market = markets[state.pair];
+            const ctx = priceChart.getContext("2d");
+            const rect = priceChart.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            priceChart.width = rect.width * dpr;
+            priceChart.height = rect.height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            const pad = 28;
+            const values = market.chart;
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const range = max - min || 1;
+            const points = values.map((value, index) => ({
+                x: pad + (index / (values.length - 1)) * (rect.width - pad * 2),
+                y: pad + (1 - ((value - min) / range)) * (rect.height - pad * 2)
+            }));
+
+            ctx.strokeStyle = "rgba(142,168,204,0.16)";
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 4; i += 1) {
+                const y = pad + (i / 5) * (rect.height - pad * 2);
+                ctx.beginPath();
+                ctx.moveTo(pad, y);
+                ctx.lineTo(rect.width - pad, y);
+                ctx.stroke();
+            }
+
+            const gradient = ctx.createLinearGradient(0, pad, 0, rect.height - pad);
+            gradient.addColorStop(0, state.side === "Buy" ? "rgba(51,196,129,0.28)" : "rgba(227,95,95,0.24)");
+            gradient.addColorStop(1, "rgba(93,168,255,0)");
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, rect.height - pad);
+            points.forEach(point => ctx.lineTo(point.x, point.y));
+            ctx.lineTo(points[points.length - 1].x, rect.height - pad);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            ctx.beginPath();
+            points.forEach((point, index) => {
+                if (index === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.strokeStyle = state.side === "Buy" ? "#33c481" : "#e35f5f";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            const last = points[points.length - 1];
+            ctx.fillStyle = "#edf5ff";
+            ctx.beginPath();
+            ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function showMarket() {
+            marketView.classList.remove("hidden");
+            checkoutView.classList.add("hidden");
+            completeView.classList.add("hidden");
+        }
+
+        function showCheckout() {
+            updateOrderSummary();
+            marketView.classList.add("hidden");
+            checkoutView.classList.remove("hidden");
+            completeView.classList.add("hidden");
+            syncCheckoutStepView();
+        }
+
+        function syncCheckoutStepView() {
+            basicStep.classList.toggle("hidden", Boolean(state.sessionId));
+            idStep.classList.toggle("hidden", !state.sessionId || state.verified);
+            fundForm.classList.toggle("hidden", !state.verified);
+            idWidgetPanel.classList.toggle("hidden", !state.sessionId || state.verified);
+
+            if (state.verified) {
+                updateStepper("fund");
+                return;
+            }
+
+            updateStepper(state.sessionId ? "id" : "basic");
+        }
+
+        async function prepareVerificationSession() {
+            const name = document.getElementById("customer-name").value.trim();
+            const email = document.getElementById("customer-email").value.trim();
+            if (!name || !email) return;
+
+            setButtonLoading(detailsSubmitBtn, true, "Preparing...");
+            try {
+                await refreshVerificationSession(name, email);
+                basicStep.classList.add("hidden");
+                idStep.classList.remove("hidden");
+                idWidgetPanel.classList.remove("hidden");
+                updateStepper("id");
+                setIdStatus("Verification session is ready.", "");
+                resetIdActionButtons();
+            } catch (error) {
+                setIdStatus(error.message, "error");
+                alert(`Verification Setup Error: ${error.message}`);
+            } finally {
+                setButtonLoading(detailsSubmitBtn, false);
+            }
+        }
+
+        async function refreshVerificationSession(name, email) {
+            const response = await fetch(`${window.location.origin}/get-required-tokens-and-session-for-a-user`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, email })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || data.message || "Could not start ID verification.");
+            }
+
+            state.tokens.kycAdmin = data.kycAdminToken;
+            state.tokens.ssiAdmin = data.ssiAdminToken;
+            state.tokens.userBearer = data.kycUserAccessToken || data.userBearerToken;
+            state.sessionId = data.sessionId;
+            state.widgetUrl = normalizeWidgetUrl(data.widgetUrl || state.widgetUrl);
+            state.customer.name = name;
+            state.customer.email = email;
+            state.verified = false;
+        }
+
+        async function restartVerificationSession() {
+            const name = state.customer.name || document.getElementById("customer-name").value.trim();
+            const email = state.customer.email || document.getElementById("customer-email").value.trim();
+
+            if (!name || !email) {
+                setIdStatus("Enter your details before restarting verification.", "error");
+                return;
+            }
+
+            resetIdWidgetFrame();
+            setButtonLoading(restartSessionBtn, true, "Restarting...");
+            verifyIdBtn.disabled = true;
+            setIdStatus("Requesting a new verification session...", "");
+
+            try {
+                await refreshVerificationSession(name, email);
+                fundForm.classList.add("hidden");
+                idWidgetPanel.classList.remove("hidden");
+                updateStepper("id");
+                resetIdActionButtons();
+                setIdStatus("New verification session is ready.", "success");
+            } catch (error) {
+                setIdStatus(error.message, "error");
+                restartSessionBtn.classList.remove("hidden");
+            } finally {
+                setButtonLoading(restartSessionBtn, false);
+            }
+        }
+
+        function openIdVerification() {
+            if (!state.sessionId || !state.tokens.userBearer) {
+                setIdStatus("Enter your details before ID verification.", "error");
+                return;
+            }
+
+            const targetUrl = buildWidgetUrl();
+            idWidgetPanel.classList.remove("hidden");
+            idWidgetPlaceholder.classList.add("hidden");
+            idWidgetFrame.src = targetUrl;
+            idWidgetFrame.classList.remove("hidden");
+            verifyIdBtn.disabled = true;
+            restartSessionBtn.classList.add("hidden");
+            setIdStatus("Complete verification in the Hypersign panel.", "");
+        }
+
+        function handleWidgetMessage(event) {
+            if (!state.widgetUrl) return;
+
+            const fromEmbeddedWidget = idWidgetFrame.contentWindow && event.source === idWidgetFrame.contentWindow;
+            if (!fromEmbeddedWidget) return;
+
+            const expectedOrigin = new URL(state.widgetUrl, window.location.origin).origin;
+            if (event.origin !== expectedOrigin) return;
+
+            try {
+                const payload = parseWidgetPayload(event.data);
+                const { status, message, code } = payload;
+
+                if (status === "success" && code === "VERIFICATION_SUCCESS") {
+                    markIdVerified(message || "ID verification completed.");
+                    return;
+                }
+
+                if (status === "error") {
+                    showVerificationFailure(code, message);
+                    return;
+                }
+
+                showVerificationFailure(code, message || "Unknown widget response.");
+            } catch (error) {
+                showVerificationFailure("", "Could not read the widget response.");
+            }
+        }
+
+        function markIdVerified(message) {
+            state.verified = true;
+            resetIdWidgetFrame();
+            idWidgetPanel.classList.add("hidden");
+            idStep.classList.add("hidden");
+            verifyIdBtn.disabled = true;
+            verifyIdBtn.innerText = "ID Verified";
+            restartSessionBtn.classList.add("hidden");
+            setIdStatus(message, "success");
+            fundForm.classList.remove("hidden");
+            updateStepper("fund");
+        }
+
+        function showVerificationFailure(code, message) {
+            resetIdWidgetFrame();
+            setIdStatus(message || getKycErrorMessage(code), "error");
+            verifyIdBtn.disabled = false;
+            restartSessionBtn.classList.remove("hidden");
+        }
+
+        function parseWidgetPayload(data) {
+            if (typeof data === "string") {
+                return JSON.parse(data);
+            }
+
+            return data || {};
+        }
+
+        function getKycErrorMessage(code) {
+            switch (code) {
+                case "SESSION_EXPIRED":
+                    return "Verification session expired. Restart the session and try again.";
+                case "ACCESS_TOKEN_EXPIRED":
+                    return "Verification tokens expired. Restart the session and try again.";
+                case "LIVELINESS_VERIFICATION_FAILED":
+                    return "Biometric validation failed. Restart the session and try again.";
+                case "DOCUMENT_VERIFICATION_FAILED":
+                    return "Document verification failed. Restart the session and try again.";
+                case "ZK_PROOF_GENERATION_FAILED":
+                    return "Proof generation failed. Restart the session and try again.";
+                default:
+                    return "ID verification failed.";
+            }
+        }
+
+        function buildWidgetUrl() {
+            const url = new URL(normalizeWidgetUrl(state.widgetUrl), window.location.origin);
+            url.searchParams.set("kycAccessToken", state.tokens.kycAdmin);
+            url.searchParams.set("ssiAccessToken", state.tokens.ssiAdmin);
+            url.searchParams.set("sessionId", state.sessionId);
+            url.searchParams.set("kycUserAccessToken", state.tokens.userBearer);
+            return url.toString();
+        }
+
+        function normalizeWidgetUrl(value) {
+            const normalizedUrl = (value || "").trim();
+            if (normalizedUrl.startsWith("http://verify.hypersign.id")) {
+                return normalizedUrl.replace(/^http:\/\//, "https://");
+            }
+            return normalizedUrl;
+        }
+
+        function updateStepper(step) {
+            const basicPill = document.getElementById("step-basic-pill");
+            const idPill = document.getElementById("step-id-pill");
+            const fundPill = document.getElementById("step-fund-pill");
+            basicPill.className = "step-pill";
+            idPill.className = "step-pill";
+            fundPill.className = "step-pill";
+
+            if (step === "basic") {
+                basicPill.classList.add("active");
+                return;
+            }
+
+            basicPill.classList.add("done");
+            if (step === "id") {
+                idPill.classList.add("active");
+                return;
+            }
+
+            idPill.classList.add("done");
+            fundPill.classList.add("active");
+        }
+
+        function setIdStatus(message, type) {
+            idStatus.innerText = message;
+            idStatus.className = "status-box mb-3";
+            if (type) idStatus.classList.add(type);
+        }
+
+        function resetIdActionButtons() {
+            verifyIdBtn.disabled = false;
+            verifyIdBtn.innerText = "Verify ID";
+            restartSessionBtn.classList.add("hidden");
+            resetIdWidgetFrame();
+        }
+
+        function resetIdWidgetFrame() {
+            idWidgetFrame.removeAttribute("src");
+            idWidgetFrame.classList.add("hidden");
+            idWidgetPlaceholder.classList.remove("hidden");
+        }
+
+        function setButtonLoading(button, isLoading, loadingText) {
+            if (!button) return;
+            if (isLoading) {
+                if (!button.dataset.defaultText) {
+                    button.dataset.defaultText = button.innerText;
+                }
+                button.disabled = true;
+                button.innerHTML = `<span class="button-loader">${loadingText || button.innerText}</span>`;
+                return;
+            }
+            button.disabled = false;
+            button.innerText = button.dataset.defaultText || button.innerText;
+        }
+
+        function showComplete() {
+            checkoutView.classList.add("hidden");
+            completeView.classList.remove("hidden");
+            const fundAmount = Number(document.getElementById("fund-amount").value || 0);
+            document.getElementById("complete-copy").innerText =
+                `${state.customer.name}, your demo wallet was funded with ${formatCurrency(fundAmount)}. Your ${state.side.toLowerCase()} ${markets[state.pair].label} order is ready for execution.`;
+        }
+
+        function resetToMarket() {
+            showMarket();
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+                maximumFractionDigits: value >= 100 ? 2 : 4
+            }).format(value);
+        }
+    </script>
+</body>
+
+</html>
